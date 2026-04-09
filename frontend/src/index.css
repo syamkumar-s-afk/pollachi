@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #e62227; /* Deep red matched from the image */
+  --color-secondary: #0f172a; /* Slate 900 for dark footer */
+  --color-background-gray: #f2f2f2;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--color-background-gray);
+  margin: 0;
+  padding: 0;
+}

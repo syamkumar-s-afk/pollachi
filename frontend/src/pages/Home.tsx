@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Share2, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface Business {
   id: number;
@@ -14,9 +15,14 @@ interface Business {
   adId: string;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 export default function Home() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const CATEGORIES = ["Education", "Finance", "Food & Beverage", "Healthcare", "Real Estate", "Retail", "Services", "Technology", "Travel & Transport", "Automotive", "Grocery", "Restaurant"];
 
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('');
@@ -30,7 +36,7 @@ export default function Home() {
       if (category) query.append('category', category);
       if (subCategory) query.append('sub_category', subCategory);
       
-      const res = await fetch(`http://localhost:3001/api/businesses?${query.toString()}`);
+      const res = await fetch(`${API_URL}/api/businesses?${query.toString()}`);
       const data = await res.json();
       setBusinesses(data);
     } catch (e) {
@@ -45,46 +51,57 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="space-y-8">
-      {/* Hero Ad Slot */}
-      <div className="w-full h-auto bg-yellow-400 rounded-xl overflow-hidden shadow-sm border border-gray-100 flex items-center justify-center relative">
-        <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1200&q=80" alt="Banner" className="w-full h-[200px] md:h-[300px] object-cover mix-blend-overlay" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center p-4">
-           <h1 className="text-4xl md:text-6xl font-black text-white drop-shadow-lg uppercase italic tracking-wider filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]"><span className="text-yellow-300">Advertise Your</span><br /> Business <span className="text-yellow-300">Digitally</span></h1>
-           <span className="bg-[var(--color-primary)] text-white font-bold px-6 py-2 rounded-full mt-4 text-xl tracking-wide shadow-lg border-2 border-white">JUST ₹3/DAY</span>
+    <div className="space-y-12 pb-12">
+      {/* Hero Search Section */}
+      <div className="relative w-full rounded-2xl overflow-hidden shadow-lg h-[400px] flex text-center items-center justify-center mt-4">
+        <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1600&q=80" alt="Pollachi Cityscape" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/40 to-gray-900/20 mix-blend-multiply"></div>
+        
+        <div className="relative z-10 w-full max-w-4xl px-4 flex flex-col items-center">
+           <span className="text-[var(--color-primary)] text-xs font-bold uppercase tracking-wider bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-sm border border-white/20 mb-6 inline-block shadow-sm">Premium Directory</span>
+           <h1 className="text-4xl md:text-5xl font-black text-white drop-shadow-lg tracking-tight mb-8">Explore Tamil Nadu's <br className="hidden md:block"/> Best Businesses</h1>
+           
+           <div className="w-full bg-white p-3 rounded-xl shadow-2xl flex flex-col md:flex-row gap-3 max-w-4xl">
+             <select value={city} onChange={(e) => setCity(e.target.value)} className="border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-lg flex-grow transition-colors hover:bg-white">
+               <option value="">All Districts</option>
+               {["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram", "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"].map(d => (
+                 <option key={d} value={d}>{d}</option>
+               ))}
+             </select>
+             <select value={category} onChange={(e) => setCategory(e.target.value)} className="border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-lg flex-grow transition-colors hover:bg-white">
+               <option value="">Category</option>
+               {["Education", "Finance", "Food & Beverage", "Healthcare", "Real Estate", "Retail", "Services", "Technology", "Travel & Transport", "Automotive", "Grocery", "Restaurant"].map(c => (
+                 <option key={c} value={c}>{c}</option>
+               ))}
+             </select>
+             <select value={subCategory} onChange={(e) => setSubCategory(e.target.value)} className="border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-lg flex-grow transition-colors hover:bg-white">
+               <option value="">Sub Category</option>
+               {["School", "College", "Restaurant", "Cafe", "Hospital", "Clinic", "Pharmacy", "Supermarket", "Men's Wear", "Women's Wear", "Electronics", "Automotive Repair", "Hotels", "Vegetable, Milk", "Non-veg", "Veg"].map(sc => (
+                 <option key={sc} value={sc}>{sc}</option>
+               ))}
+             </select>
+             <button onClick={() => fetchBusinesses()} className="bg-[var(--color-primary)] hover:bg-red-700 text-white px-8 py-3 rounded-lg font-bold transition-all shadow-md flex items-center justify-center shrink-0 w-full md:w-auto hover:shadow-lg hover:-translate-y-0.5">
+               <Search className="w-5 h-5 mr-2" />
+               Search
+             </button>
+           </div>
         </div>
       </div>
 
-      {/* Search Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <span className="text-[var(--color-primary)] text-sm font-bold uppercase">Popular Businesses</span>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Explore Business Around Me</h2>
-          <p className="text-sm text-gray-500 font-medium mt-1">Online business directory and local search platform.</p>
-        </div>
-        
-        <div className="flex gap-2 w-full md:w-auto">
-          <select value={city} onChange={(e) => setCity(e.target.value)} className="border border-gray-400 text-gray-700 text-sm font-medium focus:ring-primary focus:border-[var(--color-primary)] block w-full md:w-40 p-2.5 bg-white">
-            <option value="">All Districts</option>
-            {["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram", "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"].map(d => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
-          <select value={category} onChange={(e) => setCategory(e.target.value)} className="border border-gray-400 text-gray-700 text-sm font-medium focus:ring-primary focus:border-[var(--color-primary)] block w-full md:w-40 p-2.5 bg-white">
-            <option value="">Category</option>
-            {["Education", "Finance", "Food & Beverage", "Healthcare", "Real Estate", "Retail", "Services", "Technology", "Travel & Transport", "Automotive", "Grocery", "Restaurant"].map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-          <select value={subCategory} onChange={(e) => setSubCategory(e.target.value)} className="border border-gray-400 text-gray-700 text-sm font-medium focus:ring-primary focus:border-[var(--color-primary)] block w-full md:w-40 p-2.5 bg-white">
-            <option value="">Sub Category</option>
-            {["School", "College", "Restaurant", "Cafe", "Hospital", "Clinic", "Pharmacy", "Supermarket", "Men's Wear", "Women's Wear", "Electronics", "Automotive Repair", "Hotels", "Vegetable, Milk", "Non-veg", "Veg"].map(sc => (
-              <option key={sc} value={sc}>{sc}</option>
-            ))}
-          </select>
-          <button onClick={() => fetchBusinesses()} className="bg-[var(--color-primary)] hover:bg-red-700 text-white p-2.5 border border-[var(--color-primary)] transition-colors">
-            <Search className="w-5 h-5" />
-          </button>
+      {/* Rotating Categories Marquee */}
+      <div className="w-full overflow-hidden bg-white py-6 border-b border-gray-200 shadow-sm relative">
+        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
+        <div className="animate-marquee gap-6 px-4">
+           {[...CATEGORIES, ...CATEGORIES, ...CATEGORIES].map((c, i) => (
+             <button 
+               key={i} 
+               onClick={() => navigate(`/listings?category=${encodeURIComponent(c)}`)} 
+               className="text-[var(--color-primary)] font-bold px-6 py-2.5 bg-red-50 hover:bg-[var(--color-primary)] hover:text-white rounded-full transition-colors border border-red-100 shadow-sm cursor-pointer whitespace-nowrap"
+              >
+               {c}
+             </button>
+           ))}
         </div>
       </div>
 
@@ -92,47 +109,71 @@ export default function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
         {/* Listings */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
           {loading ? (
-             <div className="animate-pulse bg-white h-40 rounded shadow-sm"></div>
-           ) : businesses.map((biz) => (
-            <div key={biz.id} className="bg-white p-4 shadow-sm border border-gray-200 flex flex-col sm:flex-row gap-4">
-              <div className="sm:w-48 sm:h-auto h-48 flex-shrink-0 bg-gray-100 relative">
-                <img src={biz.image?.startsWith('/uploads') ? `http://localhost:3001${biz.image}` : (biz.image || "https://placehold.co/400x300")} alt={biz.name} className="w-full h-full object-cover" />
+             Array(4).fill(0).map((_, i) => (
+               <div key={i} className="animate-pulse bg-white p-4 shadow-sm border border-gray-200 flex flex-col xl:flex-row gap-4 rounded">
+                 <div className="xl:w-48 xl:h-auto h-48 flex-shrink-0 bg-gray-200 rounded"></div>
+                 <div className="flex flex-col flex-grow w-full space-y-3 pt-2">
+                   <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                   <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                   <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                   <div className="mt-auto h-12 w-full bg-gray-200 rounded pt-4 mt-6"></div>
+                 </div>
+               </div>
+             ))
+           ) : businesses.length === 0 ? (
+             <div className="md:col-span-2 bg-white p-12 text-center shadow-sm border border-gray-200 flex flex-col items-center justify-center rounded">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">No businesses found</h3>
+                <p className="text-gray-500 text-sm">We couldn't find anything matching your current filters.</p>
+             </div>
+           ) : businesses.map((biz, index) => (
+            <React.Fragment key={biz.id}>
+              <div className="bg-white p-4 shadow-sm border border-gray-200 flex flex-col xl:flex-row gap-4 hover:-translate-y-1 hover:shadow-md transition-all duration-300 rounded group">
+                <div className="xl:w-48 xl:h-auto h-48 flex-shrink-0 bg-gray-100 relative overflow-hidden rounded text-center items-center justify-center flex">
+                  <img 
+                    src={biz.image?.startsWith('/uploads') ? `${API_URL}${biz.image}` : (biz.image || "https://placehold.co/400x300?text=No+Image")} 
+                    alt={biz.name} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                    onError={(e) => { e.currentTarget.src = "https://placehold.co/400x300?text=No+Image"; }}
+                  />
+                </div>
+                <div className="flex flex-col flex-grow">
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-xl font-bold text-[var(--color-primary)] m-0">{biz.name}</h3>
+                    <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded">{biz.adId || '#AdSR001'}</span>
+                  </div>
+                  <div className="mt-2 flex items-start gap-2 text-sm text-gray-600 font-medium">
+                    <span className="mt-0.5 text-gray-400">#</span> {biz.category}, {biz.sub_category}
+                  </div>
+                  <div className="mt-1 flex items-start gap-2 text-sm text-gray-600 font-medium">
+                     <MapPin className="w-4 h-4 mt-0.5 text-gray-400 flex-shrink-0" />
+                     <span>{biz.address}</span>
+                  </div>
+                  
+                  <div className="mt-auto pt-4 flex flex-wrap gap-2">
+                    <a href={`tel:${biz.phone}`} className="bg-[var(--color-primary)] hover:bg-red-700 text-white text-sm font-semibold py-2 px-4 transition-colors shadow-sm text-center flex-grow xl:flex-grow-0 rounded hover:scale-[1.02] active:scale-95">
+                      Mobile
+                    </a>
+                    <a href={`https://wa.me/${biz.whatsapp.replace(/\\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="bg-[#1DA851] hover:bg-green-700 text-white text-sm font-semibold py-2 px-4 transition-colors shadow-sm text-center flex-grow xl:flex-grow-0 rounded hover:scale-[1.02] active:scale-95">
+                      Whatsapp
+                    </a>
+                    <button className="flex items-center justify-center gap-1.5 text-sm font-semibold py-2 px-4 flex-grow xl:flex-grow-0 transition-colors shadow-sm rounded border bg-gray-50 text-gray-700 hover:text-[var(--color-primary)] hover:bg-red-50 border-gray-100">
+                      <Share2 className="w-4 h-4" /> Share
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col flex-grow">
-                <div className="flex justify-between items-start">
-                  <h3 className="text-xl font-bold text-[var(--color-primary)] m-0">{biz.name}</h3>
-                  <span className="text-xs text-gray-500 font-medium">{biz.adId || '#AdSR001'}</span>
+              
+              {/* Inline Ad every 2 items (i.e. every '2 columns' of listings as they span 2 columns now) */}
+              {(index + 1) % 2 === 0 && index !== businesses.length - 1 && (
+                <div className="md:col-span-2 bg-blue-100 h-28 border border-blue-200 shadow-sm flex items-center justify-center relative overflow-hidden rounded">
+                   <img src="https://images.unsplash.com/photo-1563986768494-4dee2763ff0f?w=800&q=80" alt="Small Banner" className="w-full h-full object-cover opacity-80 absolute" />
+                   <div className="relative text-white font-bold text-xl drop-shadow-md">Middle Ad Slot Placeholder</div>
                 </div>
-                <div className="mt-1 flex items-start gap-2 text-sm text-gray-600 font-medium">
-                  <span className="mt-0.5 text-gray-400">#</span> {biz.category}, {biz.sub_category}
-                </div>
-                <div className="mt-1 flex items-start gap-2 text-sm text-gray-600 font-medium">
-                   <MapPin className="w-4 h-4 mt-0.5 text-gray-400 flex-shrink-0" />
-                   <span>{biz.address}</span>
-                </div>
-                
-                <div className="mt-auto pt-4 flex flex-wrap gap-2">
-                  <a href={`tel:${biz.phone}`} className="bg-[var(--color-primary)] hover:bg-red-700 text-white text-sm font-semibold py-1.5 px-6 transition-colors shadow-sm text-center flex-grow sm:flex-grow-0">
-                    Mobile
-                  </a>
-                  <a href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="bg-[#1DA851] hover:bg-green-700 text-white text-sm font-semibold py-1.5 px-6 transition-colors shadow-sm text-center flex-grow sm:flex-grow-0">
-                    Whatsapp
-                  </a>
-                  <button className="flex items-center justify-center gap-1.5 text-gray-700 hover:text-black text-sm font-semibold py-1.5 px-4 flex-grow sm:flex-grow-0 bg-gray-100 hover:bg-gray-200 transition-colors shadow-sm">
-                    <Share2 className="w-4 h-4" /> Share
-                  </button>
-                </div>
-              </div>
-            </div>
+              )}
+            </React.Fragment>
           ))}
-
-          {/* Inline Ad */}
-          <div className="bg-blue-100 h-28 border border-blue-200 shadow-sm flex items-center justify-center relative overflow-hidden">
-             <img src="https://images.unsplash.com/photo-1563986768494-4dee2763ff0f?w=800&q=80" alt="Small Banner" className="w-full h-full object-cover opacity-80 absolute" />
-             <div className="relative text-white font-bold text-xl drop-shadow-md">Middle Ad Slot Placeholder</div>
-          </div>
         </div>
 
         {/* Sidebar Ads */}
@@ -159,9 +200,15 @@ export default function Home() {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-           <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&q=80" alt="Brand 1" className="w-full h-48 object-cover rounded-xl shadow-sm border border-gray-200" />
-           <img src="https://images.unsplash.com/photo-1626806819282-2c1dc01a5e0c?w=600&q=80" alt="Brand 2" className="w-full h-48 object-cover rounded-xl shadow-sm border border-gray-200" />
-           <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&q=80" alt="Brand 3" className="w-full h-48 object-cover rounded-xl shadow-sm border border-gray-200" />
+           <div className="rounded-xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+             <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&q=80" alt="Brand 1" className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500" />
+           </div>
+           <div className="rounded-xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+             <img src="https://images.unsplash.com/photo-1626806819282-2c1dc01a5e0c?w=600&q=80" alt="Brand 2" className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500" />
+           </div>
+           <div className="rounded-xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+             <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&q=80" alt="Brand 3" className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500" />
+           </div>
         </div>
       </div>
 

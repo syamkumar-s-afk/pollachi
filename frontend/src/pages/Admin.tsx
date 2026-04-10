@@ -20,6 +20,13 @@ export default function Admin() {
     adId: '',
   });
   const [file, setFile] = useState<File | null>(null);
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [isCustomSubCategory, setIsCustomSubCategory] = useState(false);
+  const [isCustomCity, setIsCustomCity] = useState(false);
+
+  const CATEGORIES = ["Education", "Finance", "Food & Beverage", "Healthcare", "Real Estate", "Retail", "Services", "Technology", "Travel & Transport", "Automotive", "Grocery", "Restaurant"];
+  const ALL_SUB_CATEGORIES = ["School", "College", "Restaurant", "Cafe", "Hospital", "Clinic", "Pharmacy", "Supermarket", "Men's Wear", "Women's Wear", "Electronics", "Automotive Repair", "Hotels", "Vegetable, Milk", "Non-veg", "Veg"];
+  const CITIES = ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram", "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
 
   useEffect(() => {
     if (token) fetchBusinesses();
@@ -83,6 +90,9 @@ export default function Admin() {
       if (res.ok) {
         alert('Saved successfully');
         setForm({ id: null, name: '', category: '', sub_category: '', city: '', address: '', phone: '', whatsapp: '', adId: '' });
+        setIsCustomCategory(false);
+        setIsCustomSubCategory(false);
+        setIsCustomCity(false);
         setFile(null);
         fetchBusinesses();
       } else {
@@ -108,6 +118,9 @@ export default function Admin() {
 
   const editBusiness = (b: any) => {
     setForm({ ...b });
+    setIsCustomCategory(b.category && !CATEGORIES.includes(b.category));
+    setIsCustomSubCategory(b.sub_category && !ALL_SUB_CATEGORIES.includes(b.sub_category));
+    setIsCustomCity(b.city && !CITIES.includes(b.city));
   };
 
   if (!token) {
@@ -141,9 +154,93 @@ export default function Admin() {
           <h3 className="font-bold text-lg mb-4">{form.id ? 'Edit' : 'Add'} Business</h3>
           <form onSubmit={handleSubmit} className="space-y-3 text-sm">
             <input placeholder="Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full border p-2 rounded" required />
-            <input placeholder="Category" value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="w-full border p-2 rounded" required />
-            <input placeholder="Sub Category" value={form.sub_category} onChange={e => setForm({...form, sub_category: e.target.value})} className="w-full border p-2 rounded" required />
-            <input placeholder="City" value={form.city} onChange={e => setForm({...form, city: e.target.value})} className="w-full border p-2 rounded" required />
+            
+            <select 
+              value={isCustomCategory ? "Others" : form.category} 
+              onChange={(e) => {
+                if (e.target.value === "Others") {
+                  setIsCustomCategory(true);
+                  setForm({...form, category: ''});
+                } else {
+                  setIsCustomCategory(false);
+                  setForm({...form, category: e.target.value});
+                }
+              }}
+              className="w-full border p-2 rounded outline-none"
+              required
+            >
+              <option value="">Select Category</option>
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              <option value="Others">Others</option>
+            </select>
+            
+            {isCustomCategory && (
+              <input 
+                placeholder="Custom Category Name" 
+                value={form.category} 
+                onChange={e => setForm({...form, category: e.target.value})} 
+                className="w-full border p-2 rounded" 
+                required 
+              />
+            )}
+
+            <select 
+              value={isCustomSubCategory ? "Others" : form.sub_category} 
+              onChange={(e) => {
+                if (e.target.value === "Others") {
+                  setIsCustomSubCategory(true);
+                  setForm({...form, sub_category: ''});
+                } else {
+                  setIsCustomSubCategory(false);
+                  setForm({...form, sub_category: e.target.value});
+                }
+              }}
+              className="w-full border p-2 rounded outline-none"
+              required
+            >
+              <option value="">Select Sub Category</option>
+              {ALL_SUB_CATEGORIES.map(sc => <option key={sc} value={sc}>{sc}</option>)}
+              <option value="Others">Others</option>
+            </select>
+            
+            {isCustomSubCategory && (
+              <input 
+                placeholder="Custom Sub Category Name" 
+                value={form.sub_category} 
+                onChange={e => setForm({...form, sub_category: e.target.value})} 
+                className="w-full border p-2 rounded" 
+                required 
+              />
+            )}
+
+            <select 
+              value={isCustomCity ? "Others" : form.city} 
+              onChange={(e) => {
+                if (e.target.value === "Others") {
+                  setIsCustomCity(true);
+                  setForm({...form, city: ''});
+                } else {
+                  setIsCustomCity(false);
+                  setForm({...form, city: e.target.value});
+                }
+              }}
+              className="w-full border p-2 rounded outline-none"
+              required
+            >
+              <option value="">Select City</option>
+              {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+              <option value="Others">Others</option>
+            </select>
+            
+            {isCustomCity && (
+              <input 
+                placeholder="Custom City Name" 
+                value={form.city} 
+                onChange={e => setForm({...form, city: e.target.value})} 
+                className="w-full border p-2 rounded" 
+                required 
+              />
+            )}
             <textarea placeholder="Address" value={form.address} onChange={e => setForm({...form, address: e.target.value})} className="w-full border p-2 rounded" required />
             <input placeholder="Phone" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full border p-2 rounded" required />
             <input placeholder="WhatsApp" value={form.whatsapp} onChange={e => setForm({...form, whatsapp: e.target.value})} className="w-full border p-2 rounded" required />
@@ -155,7 +252,7 @@ export default function Admin() {
             </div>
 
             <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Save</button>
-            {form.id && <button type="button" onClick={() => {setForm({id: null, name: '', category: '', sub_category: '', city: '', address: '', phone: '', whatsapp: '', adId: ''}); setFile(null);}} className="w-full bg-gray-300 text-gray-800 py-2 rounded mt-2">Cancel Edit</button>}
+            {form.id && <button type="button" onClick={() => {setForm({id: null, name: '', category: '', sub_category: '', city: '', address: '', phone: '', whatsapp: '', adId: ''}); setIsCustomCategory(false); setIsCustomSubCategory(false); setIsCustomCity(false); setFile(null);}} className="w-full bg-gray-300 text-gray-800 py-2 rounded mt-2">Cancel Edit</button>}
           </form>
         </div>
 

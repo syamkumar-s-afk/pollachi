@@ -1,3 +1,5 @@
+import { Phone, Smartphone, Mail } from 'lucide-react';
+
 export default function Footer() {
   return (
     <footer className="bg-[var(--color-secondary)] text-gray-300 py-16 mt-12 w-full">
@@ -37,15 +39,15 @@ export default function Footer() {
             <h3 className="text-white text-sm font-bold mb-6 tracking-wider uppercase">CUSTOMER CARE</h3>
             <div className="space-y-5 text-sm text-gray-400">
               <div className="flex items-center gap-4">
-                <span className="text-xl">☎</span>
+                <Phone className="w-5 h-5 text-gray-400" />
                 <span className="font-medium text-white transition-colors hover:text-[var(--color-primary)] cursor-pointer">0422 4350451</span>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-xl">📱</span>
+                <Smartphone className="w-5 h-5 text-gray-400" />
                 <span className="font-medium text-white transition-colors hover:text-[var(--color-primary)] cursor-pointer">90038 54123</span>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-xl">✉</span>
+                <Mail className="w-5 h-5 text-gray-400" />
                 <span className="font-medium text-white transition-colors hover:text-[var(--color-primary)] cursor-pointer">support@spotnews.com</span>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Share2, MapPin, SearchX, Check, BookOpen } from 'lucide-react';
+import { Share2, MapPin, SearchX, Check, BookOpen } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 interface Business {

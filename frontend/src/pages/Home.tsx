@@ -127,7 +127,7 @@ export default function Home() {
                 <h3 className="text-lg font-bold text-gray-900 mb-2">No businesses found</h3>
                 <p className="text-gray-500 text-sm">We couldn't find anything matching your current filters.</p>
              </div>
-           ) : businesses.map((biz, index) => (
+           ) : businesses.map((biz, _index) => (
             <React.Fragment key={biz.id}>
               <div className="bg-white p-2.5 shadow-sm border border-gray-200 flex flex-row gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
                 <div className="w-[100px] h-[100px] md:w-32 md:h-28 bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100">

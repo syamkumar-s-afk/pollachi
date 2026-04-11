@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
-import { Menu, PlusCircle } from 'lucide-react';
+import { Menu, PlusCircle, X } from 'lucide-react';
+import { useState } from 'react';
 
 export default function Header() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const tabs = [
     { name: 'Home', id: '2', path: '/' },
     { name: 'Listings', id: '1', path: '/listings' },
@@ -37,12 +40,42 @@ export default function Header() {
           </div>
 
           <div className="flex lg:hidden items-center">
-            <button className="text-gray-500 hover:text-gray-700 p-2">
-              <Menu className="w-6 h-6" />
+            <button 
+              className="text-gray-500 hover:text-gray-700 p-2 focus:outline-none"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="lg:hidden border-t border-gray-100 bg-white">
+          <div className="px-4 pt-2 pb-4 space-y-1 shadow-inner">
+            {tabs.map((tab) => (
+              <Link
+                key={tab.id}
+                to={tab.path}
+                onClick={() => setIsMenuOpen(false)}
+                className="block px-3 py-3 rounded-md text-base font-semibold text-gray-700 hover:text-[var(--color-primary)] hover:bg-red-50 transition-colors"
+              >
+                {tab.name}
+              </Link>
+            ))}
+            <div className="pt-2 mt-2 border-t border-gray-100">
+              <Link
+                to="/admin"
+                onClick={() => setIsMenuOpen(false)}
+                className="bg-[var(--color-primary)] hover:bg-red-700 text-white px-4 py-3 rounded-lg text-base font-bold shadow-sm transition-all flex items-center justify-center gap-2 w-full mt-2"
+              >
+                <PlusCircle className="w-5 h-5" /> Add Business
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

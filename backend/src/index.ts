@@ -10,7 +10,7 @@ import { getDb } from './db';
 
 const app = express();
 const port = 3001;
-const JWT_SECRET = 'your-super-secret-key-123';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-123';
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" } // For image uploads access

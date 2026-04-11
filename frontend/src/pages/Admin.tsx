@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 export default function Admin() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [username, setUsername] = useState('');
@@ -34,7 +36,7 @@ export default function Admin() {
 
   const fetchBusinesses = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/businesses');
+      const res = await fetch(`${API_URL}/api/businesses`);
       const data = await res.json();
       setBusinesses(data);
     } catch (e) {
@@ -46,7 +48,7 @@ export default function Admin() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/login', {
+      const res = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -78,7 +80,7 @@ export default function Admin() {
     });
     if (file) formData.append('imageFile', file);
 
-    const url = form.id ? `http://localhost:3001/api/businesses/${form.id}` : 'http://localhost:3001/api/businesses';
+    const url = form.id ? `${API_URL}/api/businesses/${form.id}` : `${API_URL}/api/businesses`;
     const method = form.id ? 'PUT' : 'POST';
 
     try {
@@ -106,7 +108,7 @@ export default function Admin() {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure?')) return;
     try {
-      await fetch(`http://localhost:3001/api/businesses/${id}`, {
+      await fetch(`${API_URL}/api/businesses/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

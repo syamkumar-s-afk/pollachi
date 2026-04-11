@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Share2, MapPin, SearchX, Check } from 'lucide-react';
+import { Search, Share2, MapPin, SearchX, Check, BookOpen } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 interface Business {
@@ -152,11 +152,11 @@ export default function Listings() {
       {/* Main Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Listings */}
-        <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {loading ? (
-             Array(4).fill(0).map((_, i) => (
-               <div key={i} className="animate-pulse bg-white p-4 shadow-sm border border-gray-200 flex flex-col xl:flex-row gap-4 rounded">
-                 <div className="xl:w-48 xl:h-auto h-48 flex-shrink-0 bg-gray-200 rounded"></div>
+             Array(6).fill(0).map((_, i) => (
+               <div key={i} className="animate-pulse bg-white p-3 shadow-sm border border-gray-200 flex flex-row gap-3 rounded">
+                 <div className="w-32 h-28 bg-gray-200 rounded flex-shrink-0"></div>
                  <div className="flex flex-col flex-grow w-full space-y-3 pt-2">
                    <div className="h-6 bg-gray-200 rounded w-3/4"></div>
                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
@@ -177,8 +177,8 @@ export default function Listings() {
                 </button>
              </div>
            ) : businesses.map((biz) => (
-            <div key={biz.id} className="bg-white p-4 shadow-sm border border-gray-200 flex flex-col xl:flex-row gap-4 hover:-translate-y-1 hover:shadow-md transition-all duration-300 rounded group">
-              <div className="xl:w-48 xl:h-auto h-48 flex-shrink-0 bg-gray-100 relative overflow-hidden rounded">
+            <div key={biz.id} className="bg-white p-2.5 shadow-sm border border-gray-200 flex flex-row gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
+              <div className="w-[100px] h-[100px] md:w-32 md:h-28 bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100">
                 <img 
                   src={biz.image?.startsWith('/uploads') ? `${API_URL}${biz.image}` : (biz.image || "https://placehold.co/400x300?text=No+Image")} 
                   alt={biz.name} 
@@ -186,28 +186,29 @@ export default function Listings() {
                   onError={(e) => { e.currentTarget.src = "https://placehold.co/400x300?text=No+Image"; }}
                 />
               </div>
-              <div className="flex flex-col flex-grow">
-                <div className="flex justify-between items-start">
-                  <h3 className="text-xl font-bold text-[var(--color-primary)] m-0">{biz.name}</h3>
-                  <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded">{biz.adId || '#AdSR001'}</span>
+              <div className="flex flex-col flex-grow min-w-0">
+                <div className="flex justify-between items-start gap-2">
+                  <h3 className="text-[15px] font-bold text-[#f01a30] m-0 line-clamp-1 leading-tight">{biz.name}</h3>
+                  <span className="text-[10px] text-gray-500 font-bold flex-shrink-0 tracking-wider pt-0.5">{biz.adId || '#AdSR001'}</span>
                 </div>
-                <div className="mt-2 flex items-start gap-2 text-sm text-gray-600 font-medium">
-                  <span className="mt-0.5 text-gray-400">#</span> {biz.category}, {biz.sub_category}
+                <div className="mt-1 flex items-start gap-1.5 text-[11px] text-gray-600 flex-grow">
+                  <BookOpen className="w-3.5 h-3.5 flex-shrink-0 text-gray-500 mt-[1px]" />
+                  <span className="line-clamp-1 font-medium italic">{biz.category}, {biz.sub_category}</span>
                 </div>
-                <div className="mt-1 flex items-start gap-2 text-sm text-gray-600 font-medium">
-                   <MapPin className="w-4 h-4 mt-0.5 text-gray-400 flex-shrink-0" />
-                   <span>{biz.address}</span>
+                <div className="mt-1 flex items-start gap-1.5 text-[11px] text-gray-600 flex-grow">
+                   <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-gray-500 mt-[2px]" />
+                   <span className="line-clamp-2 leading-snug pr-2 font-medium italic">{biz.address}</span>
                 </div>
                 
-                <div className="mt-auto pt-4 flex flex-wrap gap-2">
-                  <a href={`tel:${biz.phone}`} className="bg-[var(--color-primary)] hover:bg-red-700 text-white text-sm font-semibold py-2 px-4 transition-colors shadow-sm text-center flex-grow xl:flex-grow-0 rounded hover:scale-[1.02] active:scale-95">
+                <div className="mt-2 pt-1 flex flex-wrap gap-2 items-center">
+                  <a href={`tel:${biz.phone}`} className="bg-[#ff004f] hover:bg-red-700 text-white text-[11px] font-bold py-1.5 px-4 transition-colors">
                     Mobile
                   </a>
-                  <a href={`https://wa.me/${biz.whatsapp.replace(/\\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="bg-[#1DA851] hover:bg-green-700 text-white text-sm font-semibold py-2 px-4 transition-colors shadow-sm text-center flex-grow xl:flex-grow-0 rounded hover:scale-[1.02] active:scale-95">
+                  <a href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="bg-[#00a859] hover:bg-green-700 text-white text-[11px] font-bold py-1.5 px-4 transition-colors">
                     Whatsapp
                   </a>
-                  <button onClick={() => handleShare(biz)} className={`flex items-center justify-center gap-1.5 text-sm font-semibold py-2 px-4 flex-grow xl:flex-grow-0 transition-colors shadow-sm rounded border ${copiedId === biz.id ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 hover:text-[var(--color-primary)] hover:bg-red-50 border-gray-100'}`}>
-                    {copiedId === biz.id ? <><Check className="w-4 h-4" /> Copied!</> : <><Share2 className="w-4 h-4" /> Share</>}
+                  <button onClick={() => handleShare(biz)} className={`flex items-center justify-center gap-1.5 text-[12px] font-bold py-1 px-2 transition-colors ${copiedId === biz.id ? 'text-green-600' : 'text-gray-900 hover:text-gray-600'} ml-1`}>
+                    {copiedId === biz.id ? <><Check className="w-3.5 h-3.5" /> Copied!</> : <><Share2 className="w-4 h-4 font-bold" /> Share</>}
                   </button>
                 </div>
               </div>

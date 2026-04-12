@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import {
   Search,
   ChevronLeft,
@@ -11,10 +11,12 @@ import {
   BookOpen,
   Phone,
   MessageCircle,
+  ImagePlus,
 } from 'lucide-react';
 import { useBusinesses } from '../hooks/useBusinesses';
 import { CATEGORIES, CITIES, API_URL } from '../constants';
 import type { Business } from '../types';
+import CategoryMarquee from '../components/CategoryMarquee';
 
 /* ─── Inline horizontal card matching the reference design ─── */
 function ListingCard({ biz, index }: { biz: Business; index: number }) {
@@ -99,6 +101,14 @@ function ListingCard({ biz, index }: { biz: Business; index: number }) {
   );
 }
 
+/* ─── Banner images for the top carousel ─── */
+const BANNER_IMAGES = [
+  { src: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1600&q=80', alt: 'Business meeting' },
+  { src: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1600&q=80', alt: 'Modern office' },
+  { src: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1600&q=80', alt: 'Team collaboration' },
+  { src: 'https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1600&q=80', alt: 'Professional workspace' },
+];
+
 export default function Home() {
   // Filter states
   const [city, setCity] = useState('');
@@ -128,16 +138,120 @@ export default function Home() {
     fetchPage(1);
   };
 
+  /* ─── Banner Carousel State ─── */
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [bannerDragging, setBannerDragging] = useState(false);
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const bannerStartX = useRef(0);
+  const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startAutoPlay = useCallback(() => {
+    if (autoPlayRef.current) clearInterval(autoPlayRef.current);
+    autoPlayRef.current = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % BANNER_IMAGES.length);
+    }, 4000);
+  }, []);
+
+  useEffect(() => {
+    startAutoPlay();
+    return () => { if (autoPlayRef.current) clearInterval(autoPlayRef.current); };
+  }, [startAutoPlay]);
+
+  const goToSlide = (idx: number) => {
+    setCurrentSlide(idx);
+    startAutoPlay();
+  };
+
+  const handleBannerMouseDown = (e: React.MouseEvent) => {
+    setBannerDragging(true);
+    bannerStartX.current = e.clientX;
+    if (autoPlayRef.current) clearInterval(autoPlayRef.current);
+  };
+
+  const handleBannerMouseUp = (e: React.MouseEvent) => {
+    if (!bannerDragging) return;
+    setBannerDragging(false);
+    const diff = e.clientX - bannerStartX.current;
+    if (Math.abs(diff) > 50) {
+      if (diff < 0) {
+        setCurrentSlide((p) => (p + 1) % BANNER_IMAGES.length);
+      } else {
+        setCurrentSlide((p) => (p - 1 + BANNER_IMAGES.length) % BANNER_IMAGES.length);
+      }
+    }
+    startAutoPlay();
+  };
+
+  const handleBannerMouseLeave = () => {
+    if (bannerDragging) {
+      setBannerDragging(false);
+      startAutoPlay();
+    }
+  };
+
   return (
     <div className="space-y-0 pb-12">
-      {/* ─── Ad Banner ─── */}
-      <div className="w-full rounded-lg overflow-hidden shadow-sm mt-2 mb-6">
-        <img
-          src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1600&q=80"
-          alt="Advertise your business on SpotNews"
-          className="w-full h-[160px] md:h-[220px] object-cover"
-        />
+      {/* ─── Banner Carousel ─── */}
+      <div
+        ref={bannerRef}
+        className={`w-full rounded-lg overflow-hidden shadow-sm mt-2 mb-6 relative group select-none ${
+          bannerDragging ? 'cursor-grabbing' : 'cursor-grab'
+        }`}
+        onMouseDown={handleBannerMouseDown}
+        onMouseUp={handleBannerMouseUp}
+        onMouseLeave={handleBannerMouseLeave}
+      >
+        {/* Slides */}
+        <div
+          className="flex transition-transform duration-700 ease-in-out"
+          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        >
+          {BANNER_IMAGES.map((img, i) => (
+            <img
+              key={i}
+              src={img.src}
+              alt={img.alt}
+              className="w-full h-[160px] md:h-[220px] object-cover flex-shrink-0"
+              draggable={false}
+            />
+          ))}
+        </div>
+
+        {/* Left / Right Arrows */}
+        <button
+          onClick={(e) => { e.stopPropagation(); goToSlide((currentSlide - 1 + BANNER_IMAGES.length) % BANNER_IMAGES.length); }}
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer backdrop-blur-sm"
+          aria-label="Previous slide"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); goToSlide((currentSlide + 1) % BANNER_IMAGES.length); }}
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer backdrop-blur-sm"
+          aria-label="Next slide"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+
+        {/* Dot indicators */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+          {BANNER_IMAGES.map((_, i) => (
+            <button
+              key={i}
+              onClick={(e) => { e.stopPropagation(); goToSlide(i); }}
+              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                i === currentSlide
+                  ? 'w-6 bg-white shadow-md'
+                  : 'w-2 bg-white/50 hover:bg-white/80'
+              }`}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
       </div>
+
+      {/* ─── Category Marquee ─── */}
+      <CategoryMarquee />
 
       {/* ─── Search / Filter Section (matching reference) ─── */}
       <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6 mb-6">
@@ -342,22 +456,29 @@ export default function Home() {
           )}
         </div>
 
-        {/* Sidebar Ad */}
+        {/* Sidebar — 3 Ad Slots */}
         <div className="hidden md:flex flex-col gap-4">
-          <div className="bg-white border border-[var(--color-border)] overflow-hidden shadow-sm">
-            <div className="bg-[var(--color-primary)] text-white text-xs font-bold py-1.5 text-center uppercase tracking-wider">
-              Advertisement
+          {[1, 2, 3].map((slot) => (
+            <div
+              key={slot}
+              className="bg-white border border-[var(--color-border)] overflow-hidden shadow-sm rounded-lg"
+            >
+              <div className="bg-gradient-to-r from-[var(--color-primary)] to-red-500 text-white text-[10px] font-bold py-1 text-center uppercase tracking-wider">
+                Advertisement {slot}
+              </div>
+              <div className="h-[180px] flex flex-col items-center justify-center text-[var(--color-text-muted)] text-sm bg-gradient-to-b from-gray-50 to-white p-4 group hover:bg-gray-50 transition-colors">
+                <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-2.5 transition-colors">
+                  <ImagePlus className="w-5 h-5 text-gray-400 group-hover:text-[var(--color-primary)] transition-colors" />
+                </div>
+                <p className="font-semibold text-[var(--color-text-secondary)] text-xs mb-0.5">
+                  Ad Space {slot}
+                </p>
+                <p className="text-[11px] text-center leading-relaxed text-[var(--color-text-muted)]">
+                  Upload your ad image
+                </p>
+              </div>
             </div>
-            <div className="h-[600px] flex flex-col items-center justify-center text-[var(--color-text-muted)] text-sm bg-gray-50 p-6">
-              <Megaphone className="w-10 h-10 mb-3 text-gray-300" />
-              <p className="font-semibold text-[var(--color-text-secondary)] mb-1">
-                Advertise Here
-              </p>
-              <p className="text-xs text-center leading-relaxed">
-                Reach thousands of local customers.
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 

@@ -104,6 +104,11 @@ body {
   user-select: none;
 }
 
+/* Category marquee track */
+.marquee-track::-webkit-scrollbar {
+  display: none;
+}
+
 /* When hovering or dragging, stop auto-animation and reset position so scroll works */
 .marquee-scroll:is(:hover, :focus-within) .animate-marquee,
 .marquee-scroll.is-dragging .animate-marquee {

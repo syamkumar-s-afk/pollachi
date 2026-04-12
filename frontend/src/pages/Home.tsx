@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Search,
   ChevronLeft,
@@ -6,18 +6,100 @@ import {
   RefreshCw,
   AlertCircle,
   Megaphone,
-  TrendingUp,
-  Users,
-  Building2,
+  Share2,
+  MapPin,
+  BookOpen,
+  Phone,
+  MessageCircle,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useBusinesses } from '../hooks/useBusinesses';
-import { CATEGORIES, CITIES } from '../constants';
-import BusinessCard from '../components/BusinessCard';
+import { CATEGORIES, CITIES, API_URL } from '../constants';
+import type { Business } from '../types';
+
+/* ─── Inline horizontal card matching the reference design ─── */
+function ListingCard({ biz, index }: { biz: Business; index: number }) {
+  const imageUrl = biz.image?.startsWith('/uploads')
+    ? `${API_URL}${biz.image}`
+    : biz.image || 'https://placehold.co/400x300?text=No+Image';
+
+  const delayClass = `card-delay-${Math.min(index, 19)}`;
+
+  return (
+    <div
+      className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-3 flex flex-row gap-3 hover:shadow-md transition-all duration-300 group`}
+    >
+      {/* Thumbnail */}
+      <div className="w-[100px] h-[100px] md:w-[120px] md:h-[110px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100">
+        <img
+          src={imageUrl}
+          alt={biz.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          loading="lazy"
+          onError={(e) => {
+            e.currentTarget.src = 'https://placehold.co/400x300?text=No+Image';
+          }}
+        />
+      </div>
+
+      {/* Content */}
+      <div className="flex flex-col flex-grow min-w-0">
+        <div className="flex justify-between items-start gap-2">
+          <h3 className="text-[15px] font-bold text-[var(--color-primary)] m-0 line-clamp-1 leading-tight">
+            {biz.name}
+          </h3>
+          <span className="text-[10px] text-[var(--color-text-muted)] font-bold flex-shrink-0 tracking-wider pt-0.5">
+            {biz.adId || '#AdSR001'}
+          </span>
+        </div>
+
+        <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[var(--color-text-secondary)]">
+          <BookOpen className="w-3.5 h-3.5 flex-shrink-0 text-[var(--color-text-muted)]" />
+          <span className="line-clamp-1 font-medium">
+            {biz.category}, {biz.sub_category}
+          </span>
+        </div>
+
+        <div className="mt-1 flex items-start gap-1.5 text-[11px] text-[var(--color-text-secondary)]">
+          <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-[var(--color-text-muted)] mt-[1px]" />
+          <span className="line-clamp-2 leading-snug font-medium">
+            {biz.address}, {biz.city}
+          </span>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mt-auto pt-2 flex flex-wrap items-center gap-2">
+          <a
+            href={`tel:${biz.phone}`}
+            className="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[11px] font-bold py-1.5 px-4 transition-colors"
+            aria-label={`Call ${biz.name}`}
+          >
+            <Phone className="w-3 h-3" />
+            Mobile
+          </a>
+          <a
+            href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-hover)] text-white text-[11px] font-bold py-1.5 px-4 transition-colors"
+            aria-label={`WhatsApp ${biz.name}`}
+          >
+            <MessageCircle className="w-3 h-3" />
+            Whatsapp
+          </a>
+          <button
+            className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer ml-1"
+            aria-label={`Share ${biz.name}`}
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            Share
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
-  const navigate = useNavigate();
-
   // Filter states
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('');
@@ -38,17 +120,6 @@ export default function Home() {
     listingsRef,
   } = useBusinesses({ city, category, subCategory });
 
-  // Marquee state
-  const [isMarqueeDragging, setIsMarqueeDragging] = useState(false);
-  const marqueeRef = useRef<HTMLDivElement | null>(null);
-  const marqueeDragRef = useRef({
-    active: false,
-    moved: false,
-    pointerId: -1,
-    scrollLeft: 0,
-    startX: 0,
-  });
-
   useEffect(() => {
     fetchPage(1);
   }, []);
@@ -57,262 +128,89 @@ export default function Home() {
     fetchPage(1);
   };
 
-  /* ─── Marquee Interaction Handlers ─── */
-
-  const stopMarqueeDrag = (pointerId?: number) => {
-    const marquee = marqueeRef.current;
-    const dragState = marqueeDragRef.current;
-    if (pointerId !== undefined && marquee?.hasPointerCapture(pointerId)) {
-      marquee.releasePointerCapture(pointerId);
-    }
-    dragState.active = false;
-    dragState.pointerId = -1;
-    setIsMarqueeDragging(false);
-  };
-
-  const scrollMarquee = (direction: 'left' | 'right') => {
-    const marquee = marqueeRef.current;
-    if (!marquee) return;
-    marquee.scrollBy({
-      left: direction === 'left' ? -250 : 250,
-      behavior: 'smooth',
-    });
-  };
-
-  const handleMarqueeWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    const marquee = marqueeRef.current;
-    if (!marquee) return;
-    if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
-      event.preventDefault();
-      marquee.scrollLeft += event.deltaY;
-    }
-  };
-
-  const handleMarqueePointerDown = (
-    event: React.PointerEvent<HTMLDivElement>
-  ) => {
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
-    const marquee = marqueeRef.current;
-    if (!marquee) return;
-
-    marqueeDragRef.current = {
-      active: true,
-      moved: false,
-      pointerId: event.pointerId,
-      scrollLeft: marquee.scrollLeft,
-      startX: event.clientX,
-    };
-    marquee.setPointerCapture(event.pointerId);
-    setIsMarqueeDragging(true);
-  };
-
-  const handleMarqueePointerMove = (
-    event: React.PointerEvent<HTMLDivElement>
-  ) => {
-    const marquee = marqueeRef.current;
-    const dragState = marqueeDragRef.current;
-    if (!marquee || !dragState.active) return;
-
-    const deltaX = event.clientX - dragState.startX;
-    if (Math.abs(deltaX) > 6) dragState.moved = true;
-    marquee.scrollLeft = dragState.scrollLeft - deltaX;
-  };
-
-  const handleMarqueePointerUp = (
-    event: React.PointerEvent<HTMLDivElement>
-  ) => {
-    stopMarqueeDrag(event.pointerId);
-  };
-
-  const handleMarqueeClickCapture = (
-    event: React.MouseEvent<HTMLDivElement>
-  ) => {
-    if (!marqueeDragRef.current.moved) return;
-    event.preventDefault();
-    event.stopPropagation();
-    marqueeDragRef.current.moved = false;
-  };
-
   return (
-    <div className="space-y-8 pb-12">
-      {/* ─── Hero Image ─── */}
-      <div className="relative w-full rounded-2xl overflow-hidden shadow-xl h-[220px] md:h-[300px] mt-2">
+    <div className="space-y-0 pb-12">
+      {/* ─── Ad Banner ─── */}
+      <div className="w-full rounded-lg overflow-hidden shadow-sm mt-2 mb-6">
         <img
           src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1600&q=80"
-          alt="Tamil Nadu business landscape"
-          className="absolute inset-0 w-full h-full object-cover"
+          alt="Advertise your business on SpotNews"
+          className="w-full h-[160px] md:h-[220px] object-cover"
         />
       </div>
 
-      {/* ─── Search / Filter Bar ─── */}
-      <div className="w-full bg-white p-2.5 md:p-3 rounded-2xl shadow-lg border border-[var(--color-border)] flex flex-col md:flex-row gap-2 md:gap-3 -mt-4">
-        <div className="flex-grow relative">
-          <label htmlFor="hero-city" className="sr-only">
-            Select district
-          </label>
-          <select
-            id="hero-city"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            className="border border-[var(--color-border)] bg-gray-50 text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-xl transition-colors hover:bg-white cursor-pointer"
-          >
-            <option value="">All Districts</option>
-            {CITIES.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
+      {/* ─── Search / Filter Section (matching reference) ─── */}
+      <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6 mb-6">
+        {/* Left: Title */}
+        <div className="flex-shrink-0">
+          <p className="text-[var(--color-primary)] text-xs font-bold uppercase tracking-wide mb-0.5">
+            Popular Businesses
+          </p>
+          <h1 className="text-xl md:text-2xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-tight">
+            Explore Business Around Me
+          </h1>
+          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+            Online business directory and local search platform.
+          </p>
         </div>
-        <div className="flex-grow relative">
-          <label htmlFor="hero-category" className="sr-only">
-            Select category
-          </label>
-          <select
-            id="hero-category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="border border-[var(--color-border)] bg-gray-50 text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-xl transition-colors hover:bg-white cursor-pointer"
-          >
-            <option value="">Category</option>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex-grow relative">
-          <label htmlFor="hero-subcategory" className="sr-only">
-            Select sub-category
-          </label>
-          <select
-            id="hero-subcategory"
-            value={subCategory}
-            onChange={(e) => setSubCategory(e.target.value)}
-            className="border border-[var(--color-border)] bg-gray-50 text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-xl transition-colors hover:bg-white cursor-pointer"
-          >
-            <option value="">Sub Category</option>
-            {[
-              'School',
-              'College',
-              'Restaurant',
-              'Cafe',
-              'Hospital',
-              'Clinic',
-              'Pharmacy',
-              'Supermarket',
-              "Men's Wear",
-              "Women's Wear",
-              'Electronics',
-              'Automotive Repair',
-              'Hotels',
-              'Vegetable, Milk',
-              'Non-veg',
-              'Veg',
-            ].map((sc) => (
-              <option key={sc} value={sc}>
-                {sc}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button
-          onClick={handleSearch}
-          className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md flex items-center justify-center shrink-0 w-full md:w-auto hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
-        >
-          <Search className="w-5 h-5 mr-2" />
-          Search
-        </button>
-      </div>
 
-      {/* ─── Categories Marquee ─── */}
-      <div className="w-full bg-white py-5 border-b border-[var(--color-border)] shadow-sm relative rounded-xl">
-        <div className="absolute left-10 top-0 bottom-0 w-12 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none rounded-l-xl" />
-        <div className="absolute right-10 top-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none rounded-r-xl" />
-
-        <div className="flex items-center gap-1 px-2">
-          <button
-            onClick={() => scrollMarquee('left')}
-            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-[var(--color-primary)] hover:text-white text-[var(--color-text-muted)] transition-colors shadow-sm border border-[var(--color-border)] cursor-pointer z-20"
-            aria-label="Scroll categories left"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-
-          <div
-            ref={marqueeRef}
-            aria-label="Business categories"
-            role="region"
-            className={`marquee-scroll flex-grow ${
-              isMarqueeDragging ? 'is-dragging' : ''
-            }`}
-            onClickCapture={handleMarqueeClickCapture}
-            onPointerCancel={handleMarqueePointerUp}
-            onPointerDown={handleMarqueePointerDown}
-            onPointerMove={handleMarqueePointerMove}
-            onPointerUp={handleMarqueePointerUp}
-            onWheel={handleMarqueeWheel}
-          >
-            <div className="animate-marquee">
-              {[1, 2].map((set) => (
-                <div key={set} className="flex gap-3 pr-3">
-                  {CATEGORIES.map((c) => (
-                    <button
-                      key={`${set}-${c}`}
-                      onClick={() =>
-                        navigate(
-                          `/listings?category=${encodeURIComponent(c)}`
-                        )
-                      }
-                      className="text-[var(--color-primary)] font-semibold text-sm px-5 py-2 bg-red-50 hover:bg-[var(--color-primary)] hover:text-white rounded-full transition-all border border-red-100 shadow-sm cursor-pointer whitespace-nowrap hover:shadow-md hover:-translate-y-0.5"
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
+        {/* Right: Filters inline */}
+        <div className="flex flex-col sm:flex-row gap-2 flex-grow">
+          <div className="flex-grow">
+            <label htmlFor="hero-city" className="sr-only">Select district</label>
+            <select
+              id="hero-city"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2.5 transition-colors cursor-pointer"
+            >
+              <option value="">City</option>
+              {CITIES.map((d) => (
+                <option key={d} value={d}>{d}</option>
               ))}
-            </div>
+            </select>
           </div>
-
+          <div className="flex-grow">
+            <label htmlFor="hero-category" className="sr-only">Select category</label>
+            <select
+              id="hero-category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2.5 transition-colors cursor-pointer"
+            >
+              <option value="">Category</option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex-grow">
+            <label htmlFor="hero-subcategory" className="sr-only">Select sub-category</label>
+            <select
+              id="hero-subcategory"
+              value={subCategory}
+              onChange={(e) => setSubCategory(e.target.value)}
+              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2.5 transition-colors cursor-pointer"
+            >
+              <option value="">Sub Category</option>
+              {['School', 'College', 'Restaurant', 'Cafe', 'Hospital', 'Clinic', 'Pharmacy', 'Supermarket', "Men's Wear", "Women's Wear", 'Electronics', 'Automotive Repair', 'Hotels', 'Vegetable, Milk', 'Non-veg', 'Veg'].map((sc) => (
+                <option key={sc} value={sc}>{sc}</option>
+              ))}
+            </select>
+          </div>
           <button
-            onClick={() => scrollMarquee('right')}
-            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-[var(--color-primary)] hover:text-white text-[var(--color-text-muted)] transition-colors shadow-sm border border-[var(--color-border)] cursor-pointer z-20"
-            aria-label="Scroll categories right"
+            onClick={handleSearch}
+            className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white p-2.5 px-4 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+            aria-label="Search businesses"
           >
-            <ChevronRight className="w-4 h-4" />
+            <Search className="w-5 h-5" />
           </button>
-        </div>
-      </div>
-
-      {/* ─── Listings Section Header ─── */}
-      <div
-        ref={listingsRef}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2"
-      >
-        <div>
-          <h2 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">
-            Business Listings
-          </h2>
-          {!loading && !error && totalItems > 0 && (
-            <p className="text-sm text-[var(--color-text-muted)] mt-1" aria-live="polite">
-              Showing{' '}
-              <span className="font-semibold text-[var(--color-text-secondary)]">
-                {startItem}–{endItem}
-              </span>{' '}
-              of{' '}
-              <span className="font-semibold text-[var(--color-text-secondary)]">
-                {totalItems}
-              </span>{' '}
-              results
-            </p>
-          )}
         </div>
       </div>
 
       {/* ─── Main Content Area ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Listings Grid */}
+      <div ref={listingsRef} className="grid grid-cols-1 md:grid-cols-4 gap-5">
+        {/* Listings — 2 columns */}
         <div className="md:col-span-3" aria-live="polite">
           {/* Error State */}
           {error && (
@@ -338,32 +236,27 @@ export default function Home() {
 
           {/* Loading Skeleton */}
           {loading && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {Array(6)
-                .fill(0)
-                .map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-xl overflow-hidden shadow-sm border border-[var(--color-border)]"
-                  >
-                    <div className="h-40 skeleton-shimmer" />
-                    <div className="p-4 space-y-3">
-                      <div className="h-5 skeleton-shimmer rounded-md w-3/4" />
-                      <div className="h-4 skeleton-shimmer rounded-md w-1/2" />
-                      <div className="h-4 skeleton-shimmer rounded-md w-full" />
-                      <div className="flex gap-2 pt-2">
-                        <div className="h-9 skeleton-shimmer rounded-lg w-24" />
-                        <div className="h-9 skeleton-shimmer rounded-lg w-24" />
-                      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Array(6).fill(0).map((_, i) => (
+                <div key={i} className="bg-white p-3 border border-[var(--color-border)] flex flex-row gap-3">
+                  <div className="w-[120px] h-[110px] skeleton-shimmer flex-shrink-0" />
+                  <div className="flex flex-col flex-grow space-y-2.5 pt-1">
+                    <div className="h-5 skeleton-shimmer rounded w-3/4" />
+                    <div className="h-3.5 skeleton-shimmer rounded w-1/2" />
+                    <div className="h-3.5 skeleton-shimmer rounded w-2/3" />
+                    <div className="mt-auto flex gap-2 pt-2">
+                      <div className="h-7 skeleton-shimmer rounded w-16" />
+                      <div className="h-7 skeleton-shimmer rounded w-20" />
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
           )}
 
           {/* Empty State */}
           {!loading && !error && businesses.length === 0 && (
-            <div className="md:col-span-2 bg-white p-16 text-center shadow-sm border border-[var(--color-border)] rounded-xl flex flex-col items-center justify-center">
+            <div className="md:col-span-2 bg-white p-16 text-center border border-[var(--color-border)] flex flex-col items-center justify-center">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
                 <Search className="w-7 h-7 text-[var(--color-text-muted)]" />
               </div>
@@ -377,17 +270,41 @@ export default function Home() {
             </div>
           )}
 
-          {/* Business Cards */}
+          {/* Results count */}
+          {!loading && !error && totalItems > 0 && (
+            <p className="text-xs text-[var(--color-text-muted)] mb-3">
+              Showing <span className="font-semibold text-[var(--color-text-secondary)]">{startItem}–{endItem}</span> of <span className="font-semibold text-[var(--color-text-secondary)]">{totalItems}</span> results
+            </p>
+          )}
+
+          {/* Business Cards — horizontal list layout with ad in 2nd slot */}
           {!loading && !error && businesses.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {businesses.map((biz, index) => (
-                <BusinessCard
-                  key={biz.id}
-                  business={biz}
-                  index={index}
-                  variant="grid"
-                />
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {businesses.map((biz, index) => {
+                const items = [];
+
+                {/* Insert ad banner in the 2nd slot (index 1) */}
+                if (index === 1) {
+                  items.push(
+                    <div
+                      key="inline-ad"
+                      className="bg-white border border-[var(--color-border)] overflow-hidden h-[130px]"
+                    >
+                      <img
+                        src="https://images.unsplash.com/photo-1626806819282-2c1dc01a5e0c?w=600&q=80"
+                        alt="Advertisement"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  );
+                }
+
+                items.push(
+                  <ListingCard key={biz.id} biz={biz} index={index} />
+                );
+
+                return items;
+              })}
             </div>
           )}
 
@@ -407,9 +324,7 @@ export default function Home() {
                 <span className="text-sm font-semibold text-[var(--color-text-primary)]">
                   Page {currentPage}
                 </span>
-                <span className="text-sm text-[var(--color-text-muted)]">
-                  of
-                </span>
+                <span className="text-sm text-[var(--color-text-muted)]">of</span>
                 <span className="text-sm font-semibold text-[var(--color-text-primary)]">
                   {totalPages}
                 </span>
@@ -427,111 +342,50 @@ export default function Home() {
           )}
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar Ad */}
         <div className="hidden md:flex flex-col gap-4">
-          {/* Ad Slot */}
-          <div className="bg-white border border-[var(--color-border)] rounded-xl overflow-hidden shadow-sm">
-            <div className="bg-gradient-to-r from-[var(--color-primary)] to-red-500 text-white text-[10px] font-bold py-1.5 text-center uppercase tracking-wider">
+          <div className="bg-white border border-[var(--color-border)] overflow-hidden shadow-sm">
+            <div className="bg-[var(--color-primary)] text-white text-xs font-bold py-1.5 text-center uppercase tracking-wider">
               Advertisement
             </div>
-            <div className="h-[500px] flex flex-col items-center justify-center text-[var(--color-text-muted)] text-sm bg-gradient-to-b from-gray-50 to-white p-6">
+            <div className="h-[600px] flex flex-col items-center justify-center text-[var(--color-text-muted)] text-sm bg-gray-50 p-6">
               <Megaphone className="w-10 h-10 mb-3 text-gray-300" />
               <p className="font-semibold text-[var(--color-text-secondary)] mb-1">
                 Advertise Here
               </p>
               <p className="text-xs text-center leading-relaxed">
-                Reach thousands of local customers. Contact us for pricing.
+                Reach thousands of local customers.
               </p>
-            </div>
-          </div>
-
-          {/* Stats Card */}
-          <div className="bg-white border border-[var(--color-border)] rounded-xl p-5 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-[var(--color-text-primary)] uppercase tracking-wider">
-              Directory Stats
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <Building2 className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-[var(--color-text-primary)]">
-                    {totalItems || '—'}
-                  </p>
-                  <p className="text-[11px] text-[var(--color-text-muted)]">
-                    Listed Businesses
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-[var(--color-text-primary)]">
-                    {CATEGORIES.length}
-                  </p>
-                  <p className="text-[11px] text-[var(--color-text-muted)]">
-                    Categories
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center">
-                  <Users className="w-4 h-4 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-[var(--color-text-primary)]">
-                    38
-                  </p>
-                  <p className="text-[11px] text-[var(--color-text-muted)]">
-                    Districts Covered
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ─── Featured Brands Section ─── */}
-      <div className="pt-8">
+      {/* ─── Popular Brands Section ─── */}
+      <div className="pt-10">
         <div className="text-center mb-8 relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-[var(--color-border)]" />
           </div>
           <div className="relative">
-            <span className="text-[var(--color-primary)] text-xs font-bold uppercase bg-[var(--color-background-gray)] px-6 tracking-wider">
-              Featured Brands
+            <span className="text-[var(--color-primary)] text-sm font-bold uppercase bg-[var(--color-background-gray)] px-6 tracking-wider">
+              Popular Brands
             </span>
           </div>
           <h2 className="text-2xl md:text-3xl font-bold mt-4 text-[var(--color-text-primary)]">
-            Trusted by top businesses
+            These are our popular brands
           </h2>
-          <p className="text-sm text-[var(--color-text-muted)] mt-2">
-            These premium businesses are part of our growing directory network
-          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            {
-              img: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&q=80',
-              alt: 'Premium retail brand',
-            },
-            {
-              img: 'https://images.unsplash.com/photo-1626806819282-2c1dc01a5e0c?w=600&q=80',
-              alt: 'Technology brand',
-            },
-            {
-              img: 'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=600&q=80',
-              alt: 'Healthcare brand',
-            },
+            { img: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&q=80', alt: 'Brand 1' },
+            { img: 'https://images.unsplash.com/photo-1626806819282-2c1dc01a5e0c?w=600&q=80', alt: 'Brand 2' },
+            { img: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&q=80', alt: 'Brand 3' },
           ].map((brand, i) => (
             <div
               key={i}
-              className={`card-animate card-delay-${i} rounded-xl overflow-hidden shadow-sm border border-[var(--color-border)] hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group`}
+              className={`card-animate card-delay-${i} overflow-hidden shadow-sm border border-[var(--color-border)] hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group`}
             >
               <img
                 src={brand.img}

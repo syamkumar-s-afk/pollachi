@@ -71,20 +71,36 @@ const auth = (req: express.Request, res: express.Response, next: express.NextFun
 // Public Routes
 app.get('/api/businesses', async (req, res) => {
   const db = await getDb();
-  const { city, category, sub_category } = req.query;
+  const { city, category, sub_category, page: rawPage, limit: rawLimit } = req.query;
+
+  const page = Math.max(1, parseInt(rawPage as string, 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(rawLimit as string, 10) || 20));
+  const offset = (page - 1) * limit;
   
-  let q = 'SELECT * FROM businesses WHERE 1=1';
+  let whereClause = ' WHERE 1=1';
   const params: any[] = [];
   let paramIndex = 1;
 
-  if (city) { q += ` AND LOWER(city) = LOWER($${paramIndex++})`; params.push(city); }
-  if (category) { q += ` AND LOWER(category) = LOWER($${paramIndex++})`; params.push(category); }
-  if (sub_category) { q += ` AND LOWER(sub_category) = LOWER($${paramIndex++})`; params.push(sub_category); }
+  if (city) { whereClause += ` AND LOWER(city) = LOWER($${paramIndex++})`; params.push(city); }
+  if (category) { whereClause += ` AND LOWER(category) = LOWER($${paramIndex++})`; params.push(category); }
+  if (sub_category) { whereClause += ` AND LOWER(sub_category) = LOWER($${paramIndex++})`; params.push(sub_category); }
 
-  q += ' ORDER BY created_at DESC';
+  // Get total count
+  const countResult = await db.query(`SELECT COUNT(*) as total FROM businesses${whereClause}`, params);
+  const total = parseInt(countResult.rows[0].total, 10);
+  const totalPages = Math.ceil(total / limit);
 
-  const result = await db.query(q, params);
-  res.json(result.rows);
+  // Get paginated data
+  const dataQuery = `SELECT * FROM businesses${whereClause} ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+  const result = await db.query(dataQuery, [...params, limit, offset]);
+
+  res.json({
+    data: result.rows,
+    total,
+    page,
+    totalPages,
+    limit,
+  });
 });
 
 // Admin Routes for Businesses

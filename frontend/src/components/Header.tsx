@@ -7,8 +7,8 @@ export default function Header() {
   const location = useLocation();
 
   const tabs = [
-    { name: 'Home', id: '2', path: '/' },
-    { name: 'Listings', id: '1', path: '/listings' },
+    { name: 'Home', id: '1', path: '/' },
+    { name: 'Listings', id: '2', path: '/listings' },
   ];
 
   const isActive = (path: string) => {

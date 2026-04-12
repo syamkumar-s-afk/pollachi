@@ -1,210 +1,548 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Share2, MapPin, BookOpen } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+  AlertCircle,
+  Megaphone,
+  TrendingUp,
+  Users,
+  Building2,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-interface Business {
-  id: number;
-  name: string;
-  category: string;
-  sub_category: string;
-  city: string;
-  address: string;
-  phone: string;
-  whatsapp: string;
-  image: string;
-  adId: string;
-}
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { useBusinesses } from '../hooks/useBusinesses';
+import { CATEGORIES, CITIES } from '../constants';
+import BusinessCard from '../components/BusinessCard';
 
 export default function Home() {
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const CATEGORIES = ["Education", "Finance", "Food & Beverage", "Healthcare", "Real Estate", "Retail", "Services", "Technology", "Travel & Transport", "Automotive", "Grocery", "Restaurant"];
-
+  // Filter states
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
 
-  const fetchBusinesses = async () => {
-    setLoading(true);
-    try {
-      const query = new URLSearchParams();
-      if (city) query.append('city', city);
-      if (category) query.append('category', category);
-      if (subCategory) query.append('sub_category', subCategory);
-      
-      const res = await fetch(`${API_URL}/api/businesses?${query.toString()}`);
-      const data = await res.json();
-      setBusinesses(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+  const {
+    businesses,
+    loading,
+    error,
+    currentPage,
+    totalPages,
+    totalItems,
+    startItem,
+    endItem,
+    fetchPage,
+    goToPage,
+    retry,
+    listingsRef,
+  } = useBusinesses({ city, category, subCategory });
+
+  // Marquee state
+  const [isMarqueeDragging, setIsMarqueeDragging] = useState(false);
+  const marqueeRef = useRef<HTMLDivElement | null>(null);
+  const marqueeDragRef = useRef({
+    active: false,
+    moved: false,
+    pointerId: -1,
+    scrollLeft: 0,
+    startX: 0,
+  });
+
+  useEffect(() => {
+    fetchPage(1);
+  }, []);
+
+  const handleSearch = () => {
+    fetchPage(1);
+  };
+
+  /* ─── Marquee Interaction Handlers ─── */
+
+  const stopMarqueeDrag = (pointerId?: number) => {
+    const marquee = marqueeRef.current;
+    const dragState = marqueeDragRef.current;
+    if (pointerId !== undefined && marquee?.hasPointerCapture(pointerId)) {
+      marquee.releasePointerCapture(pointerId);
+    }
+    dragState.active = false;
+    dragState.pointerId = -1;
+    setIsMarqueeDragging(false);
+  };
+
+  const scrollMarquee = (direction: 'left' | 'right') => {
+    const marquee = marqueeRef.current;
+    if (!marquee) return;
+    marquee.scrollBy({
+      left: direction === 'left' ? -250 : 250,
+      behavior: 'smooth',
+    });
+  };
+
+  const handleMarqueeWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    const marquee = marqueeRef.current;
+    if (!marquee) return;
+    if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+      event.preventDefault();
+      marquee.scrollLeft += event.deltaY;
     }
   };
 
-  useEffect(() => {
-    fetchBusinesses();
-  }, []);
+  const handleMarqueePointerDown = (
+    event: React.PointerEvent<HTMLDivElement>
+  ) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const marquee = marqueeRef.current;
+    if (!marquee) return;
+
+    marqueeDragRef.current = {
+      active: true,
+      moved: false,
+      pointerId: event.pointerId,
+      scrollLeft: marquee.scrollLeft,
+      startX: event.clientX,
+    };
+    marquee.setPointerCapture(event.pointerId);
+    setIsMarqueeDragging(true);
+  };
+
+  const handleMarqueePointerMove = (
+    event: React.PointerEvent<HTMLDivElement>
+  ) => {
+    const marquee = marqueeRef.current;
+    const dragState = marqueeDragRef.current;
+    if (!marquee || !dragState.active) return;
+
+    const deltaX = event.clientX - dragState.startX;
+    if (Math.abs(deltaX) > 6) dragState.moved = true;
+    marquee.scrollLeft = dragState.scrollLeft - deltaX;
+  };
+
+  const handleMarqueePointerUp = (
+    event: React.PointerEvent<HTMLDivElement>
+  ) => {
+    stopMarqueeDrag(event.pointerId);
+  };
+
+  const handleMarqueeClickCapture = (
+    event: React.MouseEvent<HTMLDivElement>
+  ) => {
+    if (!marqueeDragRef.current.moved) return;
+    event.preventDefault();
+    event.stopPropagation();
+    marqueeDragRef.current.moved = false;
+  };
 
   return (
-    <div className="space-y-12 pb-12">
-      {/* Hero Search Section */}
-      <div className="relative w-full rounded-2xl overflow-hidden shadow-lg h-[400px] flex text-center items-center justify-center mt-4">
-        <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1600&q=80" alt="Pollachi Cityscape" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/40 to-gray-900/20 mix-blend-multiply"></div>
-        
-        <div className="relative z-10 w-full max-w-4xl px-4 flex flex-col items-center">
-           <span className="text-[var(--color-primary)] text-xs font-bold uppercase tracking-wider bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-sm border border-white/20 mb-6 inline-block shadow-sm">Premium Directory</span>
-           <h1 className="text-4xl md:text-5xl font-black text-white drop-shadow-lg tracking-tight mb-8">Explore Tamil Nadu's <br className="hidden md:block"/> Best Businesses</h1>
-           
-           <div className="w-full bg-white p-3 rounded-xl shadow-2xl flex flex-col md:flex-row gap-3 max-w-4xl">
-             <select value={city} onChange={(e) => setCity(e.target.value)} className="border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-lg flex-grow transition-colors hover:bg-white">
-               <option value="">All Districts</option>
-               {["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram", "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"].map(d => (
-                 <option key={d} value={d}>{d}</option>
-               ))}
-             </select>
-             <select value={category} onChange={(e) => setCategory(e.target.value)} className="border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-lg flex-grow transition-colors hover:bg-white">
-               <option value="">Category</option>
-               {["Education", "Finance", "Food & Beverage", "Healthcare", "Real Estate", "Retail", "Services", "Technology", "Travel & Transport", "Automotive", "Grocery", "Restaurant"].map(c => (
-                 <option key={c} value={c}>{c}</option>
-               ))}
-             </select>
-             <select value={subCategory} onChange={(e) => setSubCategory(e.target.value)} className="border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-lg flex-grow transition-colors hover:bg-white">
-               <option value="">Sub Category</option>
-               {["School", "College", "Restaurant", "Cafe", "Hospital", "Clinic", "Pharmacy", "Supermarket", "Men's Wear", "Women's Wear", "Electronics", "Automotive Repair", "Hotels", "Vegetable, Milk", "Non-veg", "Veg"].map(sc => (
-                 <option key={sc} value={sc}>{sc}</option>
-               ))}
-             </select>
-             <button onClick={() => fetchBusinesses()} className="bg-[var(--color-primary)] hover:bg-red-700 text-white px-8 py-3 rounded-lg font-bold transition-all shadow-md flex items-center justify-center shrink-0 w-full md:w-auto hover:shadow-lg hover:-translate-y-0.5">
-               <Search className="w-5 h-5 mr-2" />
-               Search
-             </button>
-           </div>
-        </div>
+    <div className="space-y-8 pb-12">
+      {/* ─── Hero Image ─── */}
+      <div className="relative w-full rounded-2xl overflow-hidden shadow-xl h-[220px] md:h-[300px] mt-2">
+        <img
+          src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1600&q=80"
+          alt="Tamil Nadu business landscape"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
       </div>
 
-      {/* Rotating Categories Marquee */}
-      <div className="w-full overflow-hidden bg-white py-6 border-b border-gray-200 shadow-sm relative">
-        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
-        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
-        <div className="animate-marquee gap-6 px-4">
-           {[...CATEGORIES, ...CATEGORIES, ...CATEGORIES].map((c, i) => (
-             <button 
-               key={i} 
-               onClick={() => navigate(`/listings?category=${encodeURIComponent(c)}`)} 
-               className="text-[var(--color-primary)] font-bold px-6 py-2.5 bg-red-50 hover:bg-[var(--color-primary)] hover:text-white rounded-full transition-colors border border-red-100 shadow-sm cursor-pointer whitespace-nowrap"
-              >
-               {c}
-             </button>
-           ))}
+      {/* ─── Search / Filter Bar ─── */}
+      <div className="w-full bg-white p-2.5 md:p-3 rounded-2xl shadow-lg border border-[var(--color-border)] flex flex-col md:flex-row gap-2 md:gap-3 -mt-4">
+        <div className="flex-grow relative">
+          <label htmlFor="hero-city" className="sr-only">
+            Select district
+          </label>
+          <select
+            id="hero-city"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className="border border-[var(--color-border)] bg-gray-50 text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-xl transition-colors hover:bg-white cursor-pointer"
+          >
+            <option value="">All Districts</option>
+            {CITIES.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
         </div>
+        <div className="flex-grow relative">
+          <label htmlFor="hero-category" className="sr-only">
+            Select category
+          </label>
+          <select
+            id="hero-category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="border border-[var(--color-border)] bg-gray-50 text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-xl transition-colors hover:bg-white cursor-pointer"
+          >
+            <option value="">Category</option>
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex-grow relative">
+          <label htmlFor="hero-subcategory" className="sr-only">
+            Select sub-category
+          </label>
+          <select
+            id="hero-subcategory"
+            value={subCategory}
+            onChange={(e) => setSubCategory(e.target.value)}
+            className="border border-[var(--color-border)] bg-gray-50 text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-xl transition-colors hover:bg-white cursor-pointer"
+          >
+            <option value="">Sub Category</option>
+            {[
+              'School',
+              'College',
+              'Restaurant',
+              'Cafe',
+              'Hospital',
+              'Clinic',
+              'Pharmacy',
+              'Supermarket',
+              "Men's Wear",
+              "Women's Wear",
+              'Electronics',
+              'Automotive Repair',
+              'Hotels',
+              'Vegetable, Milk',
+              'Non-veg',
+              'Veg',
+            ].map((sc) => (
+              <option key={sc} value={sc}>
+                {sc}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button
+          onClick={handleSearch}
+          className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md flex items-center justify-center shrink-0 w-full md:w-auto hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+        >
+          <Search className="w-5 h-5 mr-2" />
+          Search
+        </button>
       </div>
 
-      {/* Main Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        
-        {/* Listings */}
-        <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {loading ? (
-             Array(6).fill(0).map((_, i) => (
-               <div key={i} className="animate-pulse bg-white p-3 shadow-sm border border-gray-200 flex flex-row gap-3 rounded">
-                 <div className="w-32 h-28 bg-gray-200 rounded flex-shrink-0"></div>
-                 <div className="flex flex-col flex-grow w-full space-y-3 pt-2">
-                   <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-                   <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                   <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                   <div className="mt-auto h-12 w-full bg-gray-200 rounded pt-4 mt-6"></div>
-                 </div>
-               </div>
-             ))
-           ) : businesses.length === 0 ? (
-             <div className="md:col-span-2 bg-white p-12 text-center shadow-sm border border-gray-200 flex flex-col items-center justify-center rounded">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">No businesses found</h3>
-                <p className="text-gray-500 text-sm">We couldn't find anything matching your current filters.</p>
-             </div>
-           ) : businesses.map((biz, _index) => (
-            <React.Fragment key={biz.id}>
-              <div className="bg-white p-2.5 shadow-sm border border-gray-200 flex flex-row gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 group">
-                <div className="w-[100px] h-[100px] md:w-32 md:h-28 bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100">
-                  <img 
-                    src={biz.image?.startsWith('/uploads') ? `${API_URL}${biz.image}` : (biz.image || "https://placehold.co/400x300?text=No+Image")} 
-                    alt={biz.name} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                    onError={(e) => { e.currentTarget.src = "https://placehold.co/400x300?text=No+Image"; }}
-                  />
-                </div>
-                <div className="flex flex-col flex-grow min-w-0">
-                  <div className="flex justify-between items-start gap-2">
-                    <h3 className="text-[15px] font-bold text-[#f01a30] m-0 line-clamp-1 leading-tight">{biz.name}</h3>
-                    <span className="text-[10px] text-gray-500 font-bold flex-shrink-0 tracking-wider pt-0.5">{biz.adId || '#AdSR001'}</span>
-                  </div>
-                  <div className="mt-1 flex items-start gap-1.5 text-[11px] text-gray-600 flex-grow">
-                    <BookOpen className="w-3.5 h-3.5 flex-shrink-0 text-gray-500 mt-[1px]" />
-                    <span className="line-clamp-1 font-medium italic">{biz.category}, {biz.sub_category}</span>
-                  </div>
-                  <div className="mt-1 flex items-start gap-1.5 text-[11px] text-gray-600 flex-grow">
-                     <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-gray-500 mt-[2px]" />
-                     <span className="line-clamp-2 leading-snug pr-2 font-medium italic">{biz.address}</span>
-                  </div>
-                  
-                  <div className="mt-2 pt-1 flex flex-wrap gap-2 items-center">
-                    <a href={`tel:${biz.phone}`} className="bg-[#ff004f] hover:bg-red-700 text-white text-[11px] font-bold py-1.5 px-4 transition-colors">
-                      Mobile
-                    </a>
-                    <a href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="bg-[#00a859] hover:bg-green-700 text-white text-[11px] font-bold py-1.5 px-4 transition-colors">
-                      Whatsapp
-                    </a>
-                    <button className="flex items-center justify-center gap-1.5 text-[12px] font-bold py-1 px-2 transition-colors text-gray-900 hover:text-gray-600 ml-1">
-                      <Share2 className="w-4 h-4 font-bold" /> Share
+      {/* ─── Categories Marquee ─── */}
+      <div className="w-full bg-white py-5 border-b border-[var(--color-border)] shadow-sm relative rounded-xl">
+        <div className="absolute left-10 top-0 bottom-0 w-12 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none rounded-l-xl" />
+        <div className="absolute right-10 top-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none rounded-r-xl" />
+
+        <div className="flex items-center gap-1 px-2">
+          <button
+            onClick={() => scrollMarquee('left')}
+            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-[var(--color-primary)] hover:text-white text-[var(--color-text-muted)] transition-colors shadow-sm border border-[var(--color-border)] cursor-pointer z-20"
+            aria-label="Scroll categories left"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          <div
+            ref={marqueeRef}
+            aria-label="Business categories"
+            role="region"
+            className={`marquee-scroll flex-grow ${
+              isMarqueeDragging ? 'is-dragging' : ''
+            }`}
+            onClickCapture={handleMarqueeClickCapture}
+            onPointerCancel={handleMarqueePointerUp}
+            onPointerDown={handleMarqueePointerDown}
+            onPointerMove={handleMarqueePointerMove}
+            onPointerUp={handleMarqueePointerUp}
+            onWheel={handleMarqueeWheel}
+          >
+            <div className="animate-marquee">
+              {[1, 2].map((set) => (
+                <div key={set} className="flex gap-3 pr-3">
+                  {CATEGORIES.map((c) => (
+                    <button
+                      key={`${set}-${c}`}
+                      onClick={() =>
+                        navigate(
+                          `/listings?category=${encodeURIComponent(c)}`
+                        )
+                      }
+                      className="text-[var(--color-primary)] font-semibold text-sm px-5 py-2 bg-red-50 hover:bg-[var(--color-primary)] hover:text-white rounded-full transition-all border border-red-100 shadow-sm cursor-pointer whitespace-nowrap hover:shadow-md hover:-translate-y-0.5"
+                    >
+                      {c}
                     </button>
-                  </div>
+                  ))}
                 </div>
-              </div>
-            </React.Fragment>
-          ))}
-        </div>
+              ))}
+            </div>
+          </div>
 
-        {/* Sidebar Ads */}
-        <div className="hidden lg:block space-y-4">
-           <div className="bg-white border border-gray-200 h-[600px] flex flex-col shadow-sm">
-              <div className="bg-[var(--color-primary)] text-white text-xs font-bold py-1.5 text-center">ADVERTISEMENT</div>
-              <div className="flex-grow flex items-center justify-center text-gray-400 text-sm bg-gray-50">
-                Responsive Space
-              </div>
-           </div>
+          <button
+            onClick={() => scrollMarquee('right')}
+            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-[var(--color-primary)] hover:text-white text-[var(--color-text-muted)] transition-colors shadow-sm border border-[var(--color-border)] cursor-pointer z-20"
+            aria-label="Scroll categories right"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      {/* Popular Brands Section */}
+      {/* ─── Listings Section Header ─── */}
+      <div
+        ref={listingsRef}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2"
+      >
+        <div>
+          <h2 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">
+            Business Listings
+          </h2>
+          {!loading && !error && totalItems > 0 && (
+            <p className="text-sm text-[var(--color-text-muted)] mt-1" aria-live="polite">
+              Showing{' '}
+              <span className="font-semibold text-[var(--color-text-secondary)]">
+                {startItem}–{endItem}
+              </span>{' '}
+              of{' '}
+              <span className="font-semibold text-[var(--color-text-secondary)]">
+                {totalItems}
+              </span>{' '}
+              results
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* ─── Main Content Area ─── */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Listings Grid */}
+        <div className="md:col-span-3" aria-live="polite">
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
+              <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-7 h-7 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-2">
+                Failed to load businesses
+              </h3>
+              <p className="text-sm text-[var(--color-text-secondary)] mb-5 max-w-sm mx-auto">
+                {error}
+              </p>
+              <button
+                onClick={retry}
+                className="inline-flex items-center gap-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition-colors cursor-pointer"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {/* Loading Skeleton */}
+          {loading && !error && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {Array(6)
+                .fill(0)
+                .map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-xl overflow-hidden shadow-sm border border-[var(--color-border)]"
+                  >
+                    <div className="h-40 skeleton-shimmer" />
+                    <div className="p-4 space-y-3">
+                      <div className="h-5 skeleton-shimmer rounded-md w-3/4" />
+                      <div className="h-4 skeleton-shimmer rounded-md w-1/2" />
+                      <div className="h-4 skeleton-shimmer rounded-md w-full" />
+                      <div className="flex gap-2 pt-2">
+                        <div className="h-9 skeleton-shimmer rounded-lg w-24" />
+                        <div className="h-9 skeleton-shimmer rounded-lg w-24" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && !error && businesses.length === 0 && (
+            <div className="md:col-span-2 bg-white p-16 text-center shadow-sm border border-[var(--color-border)] rounded-xl flex flex-col items-center justify-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+                <Search className="w-7 h-7 text-[var(--color-text-muted)]" />
+              </div>
+              <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-2">
+                No businesses found
+              </h3>
+              <p className="text-[var(--color-text-muted)] text-sm max-w-sm">
+                We couldn&apos;t find anything matching your current filters.
+                Try adjusting your search criteria.
+              </p>
+            </div>
+          )}
+
+          {/* Business Cards */}
+          {!loading && !error && businesses.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {businesses.map((biz, index) => (
+                <BusinessCard
+                  key={biz.id}
+                  business={biz}
+                  index={index}
+                  variant="grid"
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {!loading && !error && totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-center gap-6">
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="h-12 w-12 flex items-center justify-center rounded-full bg-white border-2 border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-[var(--color-text-secondary)] disabled:hover:border-[var(--color-border)] transition-all duration-200 shadow-sm cursor-pointer"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  Page {currentPage}
+                </span>
+                <span className="text-sm text-[var(--color-text-muted)]">
+                  of
+                </span>
+                <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  {totalPages}
+                </span>
+              </div>
+
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="h-12 w-12 flex items-center justify-center rounded-full bg-white border-2 border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-[var(--color-text-secondary)] disabled:hover:border-[var(--color-border)] transition-all duration-200 shadow-sm cursor-pointer"
+                aria-label="Next page"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="hidden md:flex flex-col gap-4">
+          {/* Ad Slot */}
+          <div className="bg-white border border-[var(--color-border)] rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-gradient-to-r from-[var(--color-primary)] to-red-500 text-white text-[10px] font-bold py-1.5 text-center uppercase tracking-wider">
+              Advertisement
+            </div>
+            <div className="h-[500px] flex flex-col items-center justify-center text-[var(--color-text-muted)] text-sm bg-gradient-to-b from-gray-50 to-white p-6">
+              <Megaphone className="w-10 h-10 mb-3 text-gray-300" />
+              <p className="font-semibold text-[var(--color-text-secondary)] mb-1">
+                Advertise Here
+              </p>
+              <p className="text-xs text-center leading-relaxed">
+                Reach thousands of local customers. Contact us for pricing.
+              </p>
+            </div>
+          </div>
+
+          {/* Stats Card */}
+          <div className="bg-white border border-[var(--color-border)] rounded-xl p-5 shadow-sm space-y-4">
+            <h3 className="text-sm font-bold text-[var(--color-text-primary)] uppercase tracking-wider">
+              Directory Stats
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <Building2 className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-[var(--color-text-primary)]">
+                    {totalItems || '—'}
+                  </p>
+                  <p className="text-[11px] text-[var(--color-text-muted)]">
+                    Listed Businesses
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-[var(--color-text-primary)]">
+                    {CATEGORIES.length}
+                  </p>
+                  <p className="text-[11px] text-[var(--color-text-muted)]">
+                    Categories
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-[var(--color-text-primary)]">
+                    38
+                  </p>
+                  <p className="text-[11px] text-[var(--color-text-muted)]">
+                    Districts Covered
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Featured Brands Section ─── */}
       <div className="pt-8">
         <div className="text-center mb-8 relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
+            <div className="w-full border-t border-[var(--color-border)]" />
           </div>
           <div className="relative">
-             <span className="text-[var(--color-primary)] text-sm font-bold uppercase bg-[var(--color-background-gray)] px-6">Popular Brands</span>
+            <span className="text-[var(--color-primary)] text-xs font-bold uppercase bg-[var(--color-background-gray)] px-6 tracking-wider">
+              Featured Brands
+            </span>
           </div>
-          <h2 className="text-3xl font-bold mt-4 text-gray-900">These are our popular brands</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mt-4 text-[var(--color-text-primary)]">
+            Trusted by top businesses
+          </h2>
+          <p className="text-sm text-[var(--color-text-muted)] mt-2">
+            These premium businesses are part of our growing directory network
+          </p>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-           <div className="rounded-xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-             <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&q=80" alt="Brand 1" className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500" />
-           </div>
-           <div className="rounded-xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-             <img src="https://images.unsplash.com/photo-1626806819282-2c1dc01a5e0c?w=600&q=80" alt="Brand 2" className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500" />
-           </div>
-           <div className="rounded-xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-             <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&q=80" alt="Brand 3" className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500" />
-           </div>
+          {[
+            {
+              img: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&q=80',
+              alt: 'Premium retail brand',
+            },
+            {
+              img: 'https://images.unsplash.com/photo-1626806819282-2c1dc01a5e0c?w=600&q=80',
+              alt: 'Technology brand',
+            },
+            {
+              img: 'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=600&q=80',
+              alt: 'Healthcare brand',
+            },
+          ].map((brand, i) => (
+            <div
+              key={i}
+              className={`card-animate card-delay-${i} rounded-xl overflow-hidden shadow-sm border border-[var(--color-border)] hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group`}
+            >
+              <img
+                src={brand.img}
+                alt={brand.alt}
+                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+              />
+            </div>
+          ))}
         </div>
       </div>
-
     </div>
   );
 }

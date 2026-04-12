@@ -1,17 +1,76 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #e62227; /* Deep red matched from the image */
-  --color-secondary: #0f172a; /* Slate 900 for dark footer */
-  --color-background-gray: #f2f2f2;
+  --color-primary: #e62227;
+  --color-primary-hover: #c91d22;
+  --color-secondary: #0f172a;
+  --color-success: #16a34a;
+  --color-success-hover: #15803d;
+  --color-whatsapp: #25D366;
+  --color-whatsapp-hover: #1fad54;
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  --color-warning: #f59e0b;
+  --color-background-gray: #f3f4f6;
+  --color-background-white: #ffffff;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #9ca3af;
+  --color-border: #e5e7eb;
+  --color-border-light: #f3f4f6;
 }
 
+/* ───────────── Base ───────────── */
+
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--color-background-gray);
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* ───────────── Accessibility ───────────── */
+
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 9999;
+  padding: 16px 24px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  border-radius: 0 0 8px 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.skip-to-content:focus {
+  left: 0;
+  top: 0;
+  width: auto;
+  height: auto;
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Global focus-visible ring for interactive elements */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ───────────── Marquee & Scrolling ───────────── */
 
 @keyframes marquee {
   0% { transform: translateX(0); }
@@ -19,11 +78,168 @@ body {
 }
 
 .animate-marquee {
-  animation: marquee 20s linear infinite;
+  animation: marquee 40s linear infinite;
   display: flex;
   width: max-content;
+  will-change: transform;
+  transition: none;
 }
 
-.animate-marquee:hover {
+.marquee-scroll {
+  cursor: grab;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  touch-action: pan-y;
+  scroll-behavior: auto;
+  position: relative;
+}
+
+.marquee-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.marquee-scroll.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+/* When hovering or dragging, stop auto-animation and reset position so scroll works */
+.marquee-scroll:is(:hover, :focus-within) .animate-marquee,
+.marquee-scroll.is-dragging .animate-marquee {
   animation-play-state: paused;
+  transform: translateX(0) !important;
+}
+
+/* ───────────── Card Entrance Animations ───────────── */
+
+@keyframes cardFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-animate {
+  animation: cardFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Stagger delays for first 20 cards */
+.card-delay-0 { animation-delay: 0ms; }
+.card-delay-1 { animation-delay: 40ms; }
+.card-delay-2 { animation-delay: 80ms; }
+.card-delay-3 { animation-delay: 120ms; }
+.card-delay-4 { animation-delay: 160ms; }
+.card-delay-5 { animation-delay: 200ms; }
+.card-delay-6 { animation-delay: 240ms; }
+.card-delay-7 { animation-delay: 280ms; }
+.card-delay-8 { animation-delay: 320ms; }
+.card-delay-9 { animation-delay: 360ms; }
+.card-delay-10 { animation-delay: 400ms; }
+.card-delay-11 { animation-delay: 440ms; }
+.card-delay-12 { animation-delay: 480ms; }
+.card-delay-13 { animation-delay: 520ms; }
+.card-delay-14 { animation-delay: 560ms; }
+.card-delay-15 { animation-delay: 600ms; }
+.card-delay-16 { animation-delay: 640ms; }
+.card-delay-17 { animation-delay: 680ms; }
+.card-delay-18 { animation-delay: 720ms; }
+.card-delay-19 { animation-delay: 760ms; }
+
+/* ───────────── Mobile Menu Slide ───────────── */
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menu-slide-enter {
+  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ───────────── Toast Animations ───────────── */
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.toast-enter {
+  animation: toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.toast-exit {
+  animation: toastSlideOut 0.25s ease-in both;
+}
+
+/* ───────────── Skeleton Shimmer ───────────── */
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ───────────── Smooth Scrolling ───────────── */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ───────────── Confirmation Modal ───────────── */
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-overlay {
+  animation: modalFadeIn 0.2s ease-out both;
+}
+
+.modal-content {
+  animation: modalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

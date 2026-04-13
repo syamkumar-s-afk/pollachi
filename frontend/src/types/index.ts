@@ -26,3 +26,28 @@ export interface ApiError {
   message: string;
   status?: number;
 }
+
+export interface Subcategory {
+  id: number;
+  category_id: number;
+  name: string;
+  slug: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  subcategories?: Subcategory[];
+}
+
+export interface CategoriesResponse {
+  data: (Category & { subcategories: Subcategory[] })[];
+  total: number;
+}
+

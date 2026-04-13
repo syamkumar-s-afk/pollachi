@@ -6,7 +6,7 @@
  */
 
 import { API_URL } from '../constants';
-import type { Business, PaginatedResponse, ApiError } from '../types';
+import type { Business, PaginatedResponse, ApiError, Category, Subcategory, CategoriesResponse } from '../types';
 
 const REQUEST_TIMEOUT_MS = 10_000;
 
@@ -24,8 +24,16 @@ async function request<T>(
     });
 
     if (!res.ok) {
+      let serverError = '';
+      try {
+        const errJson = await res.json();
+        serverError = errJson.error || errJson.message || '';
+      } catch (e) {
+        // ignore JSON parse error
+      }
+      
       const error: ApiError = {
-        message: `Request failed: ${res.statusText}`,
+        message: serverError || `Request failed with status ${res.status}`,
         status: res.status,
       };
       throw error;
@@ -136,6 +144,95 @@ export async function deleteBusiness(
   token: string
 ): Promise<void> {
   await request(`/api/businesses/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+// ─── CATEGORY API FUNCTIONS ───
+
+export async function fetchCategories(): Promise<Category[]> {
+  const response = await request<CategoriesResponse>('/api/categories');
+  return response.data || [];
+}
+
+export async function createCategory(
+  name: string,
+  description: string | undefined,
+  token: string
+): Promise<Category> {
+  return request('/api/categories', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name, description }),
+  });
+}
+
+export async function updateCategory(
+  id: number,
+  updates: Partial<Category>,
+  token: string
+): Promise<void> {
+  await request(`/api/categories/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function deleteCategory(
+  id: number,
+  token: string
+): Promise<void> {
+  await request(`/api/categories/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+// ─── SUBCATEGORY API FUNCTIONS ───
+
+export async function createSubcategory(
+  categoryId: number,
+  name: string,
+  token: string
+): Promise<Subcategory> {
+  return request(`/api/categories/${categoryId}/subcategories`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function updateSubcategory(
+  id: number,
+  name: string,
+  token: string
+): Promise<void> {
+  await request(`/api/subcategories/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function deleteSubcategory(
+  id: number,
+  token: string
+): Promise<void> {
+  await request(`/api/subcategories/${id}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });

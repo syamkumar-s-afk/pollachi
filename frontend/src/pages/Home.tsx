@@ -5,7 +5,6 @@ import {
   ChevronRight,
   RefreshCw,
   AlertCircle,
-  Megaphone,
   Share2,
   MapPin,
   BookOpen,
@@ -14,8 +13,11 @@ import {
   ImagePlus,
 } from 'lucide-react';
 import { useBusinesses } from '../hooks/useBusinesses';
-import { CATEGORIES, CITIES, API_URL } from '../constants';
+import { CITIES, API_URL } from '../constants';
 import type { Business } from '../types';
+import { useCategories } from '../hooks/useCategories';
+import { useAdvertisements } from '../hooks/useAdvertisements';
+import { useBanners } from '../hooks/useBanners';
 import CategoryMarquee from '../components/CategoryMarquee';
 
 /* ─── Inline horizontal card matching the reference design ─── */
@@ -28,10 +30,10 @@ function ListingCard({ biz, index }: { biz: Business; index: number }) {
 
   return (
     <div
-      className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-3 flex flex-row gap-3 hover:shadow-md transition-all duration-300 group`}
+      className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-2 flex flex-row gap-2 hover:shadow-md transition-all duration-300 group`}
     >
       {/* Thumbnail */}
-      <div className="w-[100px] h-[100px] md:w-[120px] md:h-[110px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100">
+      <div className="w-[80px] h-[75px] md:w-[90px] md:h-[85px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100">
         <img
           src={imageUrl}
           alt={biz.name}
@@ -54,25 +56,24 @@ function ListingCard({ biz, index }: { biz: Business; index: number }) {
           </span>
         </div>
 
-        <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[var(--color-text-secondary)]">
-          <BookOpen className="w-3.5 h-3.5 flex-shrink-0 text-[var(--color-text-muted)]" />
+        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-[var(--color-text-secondary)]">
+          <BookOpen className="w-3 h-3 flex-shrink-0 text-[var(--color-text-muted)]" />
           <span className="line-clamp-1 font-medium">
             {biz.category}, {biz.sub_category}
           </span>
         </div>
 
-        <div className="mt-1 flex items-start gap-1.5 text-[11px] text-[var(--color-text-secondary)]">
-          <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-[var(--color-text-muted)] mt-[1px]" />
-          <span className="line-clamp-2 leading-snug font-medium">
+        <div className="mt-0.5 flex items-start gap-1.5 text-[10px] text-[var(--color-text-secondary)]">
+          <MapPin className="w-3 h-3 flex-shrink-0 text-[var(--color-text-muted)] mt-[1px]" />
+          <span className="line-clamp-2 leading-tight font-medium">
             {biz.address}, {biz.city}
           </span>
         </div>
 
-        {/* Action Buttons */}
-        <div className="mt-auto pt-2 flex flex-wrap items-center gap-2">
+        <div className="mt-auto pt-1.5 flex flex-wrap items-center gap-1.5">
           <a
             href={`tel:${biz.phone}`}
-            className="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[11px] font-bold py-1.5 px-4 transition-colors"
+            className="inline-flex items-center gap-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[10px] font-bold py-1 px-3 transition-colors"
             aria-label={`Call ${biz.name}`}
           >
             <Phone className="w-3 h-3" />
@@ -82,17 +83,17 @@ function ListingCard({ biz, index }: { biz: Business; index: number }) {
             href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-hover)] text-white text-[11px] font-bold py-1.5 px-4 transition-colors"
+            className="inline-flex items-center gap-1 bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-hover)] text-white text-[10px] font-bold py-1 px-3 transition-colors"
             aria-label={`WhatsApp ${biz.name}`}
           >
             <MessageCircle className="w-3 h-3" />
             Whatsapp
           </a>
           <button
-            className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer ml-1"
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer ml-1"
             aria-label={`Share ${biz.name}`}
           >
-            <Share2 className="w-3.5 h-3.5" />
+            <Share2 className="w-3 h-3" />
             Share
           </button>
         </div>
@@ -101,19 +102,24 @@ function ListingCard({ biz, index }: { biz: Business; index: number }) {
   );
 }
 
-/* ─── Banner images for the top carousel ─── */
-const BANNER_IMAGES = [
-  { src: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1600&q=80', alt: 'Business meeting' },
-  { src: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1600&q=80', alt: 'Modern office' },
-  { src: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1600&q=80', alt: 'Team collaboration' },
-  { src: 'https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1600&q=80', alt: 'Professional workspace' },
-];
+/* ─── Fallback banner images (used when a slot has no upload) ─── */
+const BANNER_FALLBACKS: Record<string, { src: string; alt: string }> = {
+  banner1: { src: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1600&q=80', alt: 'Business meeting' },
+  banner2: { src: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1600&q=80', alt: 'Modern office' },
+  banner3: { src: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1600&q=80', alt: 'Team collaboration' },
+  banner4: { src: 'https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1600&q=80', alt: 'Professional workspace' },
+  banner5: { src: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1600&q=80', alt: 'Business network' },
+};
 
 export default function Home() {
   // Filter states
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
+
+  const { categories: dynamicCategories } = useCategories();
+  const categoryNames = dynamicCategories.map((c) => c.name);
+  const allSubCategories = Array.from(new Set(dynamicCategories.flatMap(c => c.subcategories?.map(sc => sc.name) || [])));
 
   const {
     businesses,
@@ -129,6 +135,19 @@ export default function Home() {
     retry,
     listingsRef,
   } = useBusinesses({ city, category, subCategory });
+
+  const { ads } = useAdvertisements();
+  const { banners } = useBanners();
+
+  // Build dynamic slide list: merge DB banners with fallbacks
+  const bannerSlides = ['banner1', 'banner2', 'banner3', 'banner4', 'banner5'].map((slot) => {
+    const db = banners.find(b => b.slot === slot);
+    const hasUpload = db?.image_url && db.image_url.trim() !== '';
+    const src = hasUpload
+      ? (db!.image_url!.startsWith('/uploads') ? `${API_URL}${db!.image_url}` : db!.image_url!)
+      : BANNER_FALLBACKS[slot].src;
+    return { src, alt: BANNER_FALLBACKS[slot].alt, link: db?.link_url || null };
+  });
 
   useEffect(() => {
     fetchPage(1);
@@ -148,9 +167,9 @@ export default function Home() {
   const startAutoPlay = useCallback(() => {
     if (autoPlayRef.current) clearInterval(autoPlayRef.current);
     autoPlayRef.current = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % BANNER_IMAGES.length);
+      setCurrentSlide((prev) => (prev + 1) % bannerSlides.length);
     }, 4000);
-  }, []);
+  }, [bannerSlides.length]);
 
   useEffect(() => {
     startAutoPlay();
@@ -174,9 +193,9 @@ export default function Home() {
     const diff = e.clientX - bannerStartX.current;
     if (Math.abs(diff) > 50) {
       if (diff < 0) {
-        setCurrentSlide((p) => (p + 1) % BANNER_IMAGES.length);
+        setCurrentSlide((p) => (p + 1) % bannerSlides.length);
       } else {
-        setCurrentSlide((p) => (p - 1 + BANNER_IMAGES.length) % BANNER_IMAGES.length);
+        setCurrentSlide((p) => (p - 1 + bannerSlides.length) % bannerSlides.length);
       }
     }
     startAutoPlay();
@@ -190,11 +209,11 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-0 pb-12">
+    <div className="space-y-0 pb-6">
       {/* ─── Banner Carousel ─── */}
       <div
         ref={bannerRef}
-        className={`w-full rounded-lg overflow-hidden shadow-sm mt-2 mb-6 relative group select-none ${
+        className={`w-full rounded-lg overflow-hidden shadow-sm mt-0 mb-3 relative group select-none ${
           bannerDragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
         onMouseDown={handleBannerMouseDown}
@@ -206,27 +225,38 @@ export default function Home() {
           className="flex transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         >
-          {BANNER_IMAGES.map((img, i) => (
-            <img
-              key={i}
-              src={img.src}
-              alt={img.alt}
-              className="w-full h-[160px] md:h-[220px] object-cover flex-shrink-0"
-              draggable={false}
-            />
+          {bannerSlides.map((img, i) => (
+            img.link ? (
+              <a key={i} href={img.link} target="_blank" rel="noopener noreferrer" className="w-full flex-shrink-0 block">
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  className="w-full h-[120px] md:h-[150px] object-cover"
+                  draggable={false}
+                />
+              </a>
+            ) : (
+              <img
+                key={i}
+                src={img.src}
+                alt={img.alt}
+                className="w-full h-[120px] md:h-[150px] object-cover flex-shrink-0"
+                draggable={false}
+              />
+            )
           ))}
         </div>
 
         {/* Left / Right Arrows */}
         <button
-          onClick={(e) => { e.stopPropagation(); goToSlide((currentSlide - 1 + BANNER_IMAGES.length) % BANNER_IMAGES.length); }}
+          onClick={(e) => { e.stopPropagation(); goToSlide((currentSlide - 1 + bannerSlides.length) % bannerSlides.length); }}
           className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer backdrop-blur-sm"
           aria-label="Previous slide"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); goToSlide((currentSlide + 1) % BANNER_IMAGES.length); }}
+          onClick={(e) => { e.stopPropagation(); goToSlide((currentSlide + 1) % bannerSlides.length); }}
           className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer backdrop-blur-sm"
           aria-label="Next slide"
         >
@@ -235,7 +265,7 @@ export default function Home() {
 
         {/* Dot indicators */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
-          {BANNER_IMAGES.map((_, i) => (
+          {bannerSlides.map((_, i) => (
             <button
               key={i}
               onClick={(e) => { e.stopPropagation(); goToSlide(i); }}
@@ -254,29 +284,29 @@ export default function Home() {
       <CategoryMarquee />
 
       {/* ─── Search / Filter Section (matching reference) ─── */}
-      <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6 mb-6">
+      <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-3">
         {/* Left: Title */}
         <div className="flex-shrink-0">
-          <p className="text-[var(--color-primary)] text-xs font-bold uppercase tracking-wide mb-0.5">
+          <p className="text-[var(--color-primary)] text-[10px] font-bold uppercase tracking-wide mb-0.5">
             Popular Businesses
           </p>
-          <h1 className="text-xl md:text-2xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-tight">
+          <h1 className="text-lg md:text-xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-tight">
             Explore Business Around Me
           </h1>
-          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
             Online business directory and local search platform.
           </p>
         </div>
 
         {/* Right: Filters inline */}
-        <div className="flex flex-col sm:flex-row gap-2 flex-grow">
-          <div className="flex-grow">
+        <div className="flex flex-row w-full sm:w-auto gap-1.5 sm:gap-2 flex-grow overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex-1 min-w-[80px]">
             <label htmlFor="hero-city" className="sr-only">Select district</label>
             <select
               id="hero-city"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2.5 transition-colors cursor-pointer"
+              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-[11px] sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2 sm:p-2.5 transition-colors cursor-pointer"
             >
               <option value="">City</option>
               {CITIES.map((d) => (
@@ -284,46 +314,46 @@ export default function Home() {
               ))}
             </select>
           </div>
-          <div className="flex-grow">
+          <div className="flex-1 min-w-[90px]">
             <label htmlFor="hero-category" className="sr-only">Select category</label>
             <select
               id="hero-category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2.5 transition-colors cursor-pointer"
+              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-[11px] sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2 sm:p-2.5 transition-colors cursor-pointer"
             >
               <option value="">Category</option>
-              {CATEGORIES.map((c) => (
+              {categoryNames.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </div>
-          <div className="flex-grow">
+          <div className="flex-1 min-w-[95px]">
             <label htmlFor="hero-subcategory" className="sr-only">Select sub-category</label>
             <select
               id="hero-subcategory"
               value={subCategory}
               onChange={(e) => setSubCategory(e.target.value)}
-              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2.5 transition-colors cursor-pointer"
+              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-[11px] sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2 sm:p-2.5 transition-colors cursor-pointer"
             >
               <option value="">Sub Category</option>
-              {['School', 'College', 'Restaurant', 'Cafe', 'Hospital', 'Clinic', 'Pharmacy', 'Supermarket', "Men's Wear", "Women's Wear", 'Electronics', 'Automotive Repair', 'Hotels', 'Vegetable, Milk', 'Non-veg', 'Veg'].map((sc) => (
+              {allSubCategories.map((sc) => (
                 <option key={sc} value={sc}>{sc}</option>
               ))}
             </select>
           </div>
           <button
             onClick={handleSearch}
-            className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white p-2.5 px-4 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+            className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white p-2 px-3 sm:p-2.5 sm:px-4 flex items-center justify-center shrink-0 transition-colors cursor-pointer rounded-r-none sm:rounded-none"
             aria-label="Search businesses"
           >
-            <Search className="w-5 h-5" />
+            <Search className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>
 
       {/* ─── Main Content Area ─── */}
-      <div ref={listingsRef} className="grid grid-cols-1 md:grid-cols-4 gap-5">
+      <div ref={listingsRef} className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {/* Listings — 2 columns */}
         <div className="md:col-span-3" aria-live="polite">
           {/* Error State */}
@@ -393,24 +423,33 @@ export default function Home() {
 
           {/* Business Cards — horizontal list layout with ad in 2nd slot */}
           {!loading && !error && businesses.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {businesses.map((biz, index) => {
                 const items = [];
 
                 {/* Insert ad banner in the 2nd slot (index 1) */}
                 if (index === 1) {
-                  items.push(
-                    <div
-                      key="inline-ad"
-                      className="bg-white border border-[var(--color-border)] overflow-hidden h-[130px]"
-                    >
-                      <img
-                        src="https://images.unsplash.com/photo-1626806819282-2c1dc01a5e0c?w=600&q=80"
-                        alt="Advertisement"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  );
+                  const inlineAd = ads.find(a => a.slot === 'inline-ad');
+                  const hasImage = inlineAd?.image_url && inlineAd.image_url.trim() !== '';
+                  const displayUrl = hasImage ? (inlineAd!.image_url!.startsWith('/uploads') ? `${API_URL}${inlineAd!.image_url}` : inlineAd!.image_url) : null;
+                  
+                  if (displayUrl) {
+                    items.push(
+                      <a
+                        key="inline-ad"
+                        href={inlineAd.link_url || '#'} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="bg-white border border-[var(--color-border)] overflow-hidden h-[130px] block"
+                      >
+                        <img
+                          src={displayUrl}
+                          alt="Advertisement"
+                          className="w-full h-full object-cover"
+                        />
+                      </a>
+                    );
+                  }
                 }
 
                 items.push(
@@ -457,48 +496,60 @@ export default function Home() {
         </div>
 
         {/* Sidebar — 3 Ad Slots */}
-        <div className="hidden md:flex flex-col gap-4">
-          {[1, 2, 3].map((slot) => (
-            <div
-              key={slot}
-              className="bg-white border border-[var(--color-border)] overflow-hidden shadow-sm rounded-lg"
-            >
-              <div className="bg-gradient-to-r from-[var(--color-primary)] to-red-500 text-white text-[10px] font-bold py-1 text-center uppercase tracking-wider">
-                Advertisement {slot}
-              </div>
-              <div className="h-[180px] flex flex-col items-center justify-center text-[var(--color-text-muted)] text-sm bg-gradient-to-b from-gray-50 to-white p-4 group hover:bg-gray-50 transition-colors">
-                <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-2.5 transition-colors">
-                  <ImagePlus className="w-5 h-5 text-gray-400 group-hover:text-[var(--color-primary)] transition-colors" />
+        <div className="hidden md:flex flex-col gap-2">
+          {['ad1', 'ad2', 'ad3'].map((slot, idx) => {
+            const adData = ads.find(a => a.slot === slot);
+            const hasImage = adData?.image_url && adData.image_url.trim() !== '';
+            const displayUrl = hasImage ? (adData.image_url!.startsWith('/uploads') ? `${API_URL}${adData.image_url}` : adData.image_url) : null;
+
+            return (
+              <div
+                key={slot}
+                className="bg-white border border-[var(--color-border)] overflow-hidden shadow-sm rounded-lg"
+              >
+                <div className="bg-gradient-to-r from-[var(--color-primary)] to-red-500 text-white text-[10px] font-bold py-1 text-center uppercase tracking-wider relative z-10">
+                  Advertisement {idx + 1}
                 </div>
-                <p className="font-semibold text-[var(--color-text-secondary)] text-xs mb-0.5">
-                  Ad Space {slot}
-                </p>
-                <p className="text-[11px] text-center leading-relaxed text-[var(--color-text-muted)]">
-                  Upload your ad image
-                </p>
+                {displayUrl ? (
+                  <a href={adData.link_url || '#'} target="_blank" rel="noopener noreferrer" className="block h-[130px] w-full bg-gray-100">
+                    <img src={displayUrl} alt={`Advertisement ${idx + 1}`} className="w-full h-full object-cover" />
+                  </a>
+                ) : (
+                  <div className="h-[130px] flex flex-col items-center justify-center text-[var(--color-text-muted)] text-sm bg-gradient-to-b from-gray-50 to-white p-3 group hover:bg-gray-50 transition-colors">
+                    <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-2.5 transition-colors">
+                      <ImagePlus className="w-5 h-5 text-gray-400 group-hover:text-[var(--color-primary)] transition-colors" />
+                    </div>
+                    <p className="font-semibold text-[var(--color-text-secondary)] text-xs mb-0.5">
+                      Ad Space {idx + 1}
+                    </p>
+                    <p className="text-[11px] text-center leading-relaxed text-[var(--color-text-muted)]">
+                      Available for advertisement
+                    </p>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       {/* ─── Popular Brands Section ─── */}
-      <div className="pt-10">
-        <div className="text-center mb-8 relative">
+      <div className="pt-6">
+        <div className="text-center mb-4 relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-[var(--color-border)]" />
           </div>
           <div className="relative">
-            <span className="text-[var(--color-primary)] text-sm font-bold uppercase bg-[var(--color-background-gray)] px-6 tracking-wider">
+            <span className="text-[var(--color-primary)] text-xs font-bold uppercase bg-[var(--color-background-gray)] px-4 tracking-wider">
               Popular Brands
             </span>
           </div>
-          <h2 className="text-2xl md:text-3xl font-bold mt-4 text-[var(--color-text-primary)]">
+          <h2 className="text-xl md:text-2xl font-bold mt-2 text-[var(--color-text-primary)]">
             These are our popular brands
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {[
             { img: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&q=80', alt: 'Brand 1' },
             { img: 'https://images.unsplash.com/photo-1626806819282-2c1dc01a5e0c?w=600&q=80', alt: 'Brand 2' },
@@ -511,7 +562,7 @@ export default function Home() {
               <img
                 src={brand.img}
                 alt={brand.alt}
-                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
+                className="w-full h-28 object-cover group-hover:scale-105 transition-transform duration-500"
                 loading="lazy"
               />
             </div>

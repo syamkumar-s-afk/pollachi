@@ -10,12 +10,8 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useBusinesses } from '../hooks/useBusinesses';
-import {
-  CATEGORIES,
-  CITIES,
-  ALL_SUB_CATEGORIES,
-  CATEGORY_MAP,
-} from '../constants';
+import { CITIES } from '../constants';
+import { useCategories } from '../hooks/useCategories';
 import BusinessCard from '../components/BusinessCard';
 
 export default function Listings() {
@@ -30,6 +26,14 @@ export default function Listings() {
   const [subCategory, setSubCategory] = useState(
     searchParams.get('sub_category') || ''
   );
+
+  const { categories: dynamicCategories } = useCategories();
+  const categoryNames = dynamicCategories.map(c => c.name);
+  const categoryMap: { [key: string]: string[] } = {};
+  dynamicCategories.forEach(c => {
+    categoryMap[c.name] = c.subcategories?.map(sc => sc.name) || [];
+  });
+  const allSubCategories = Array.from(new Set(dynamicCategories.flatMap(c => c.subcategories?.map(sc => sc.name) || [])));
 
   const {
     businesses,
@@ -63,8 +67,8 @@ export default function Listings() {
   useEffect(() => {
     if (
       category &&
-      CATEGORY_MAP[category] &&
-      !CATEGORY_MAP[category].includes(subCategory)
+      categoryMap[category] &&
+      !categoryMap[category].includes(subCategory)
     ) {
       setSubCategory('');
     }
@@ -184,7 +188,7 @@ export default function Listings() {
               className="border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-xl bg-gray-50 hover:bg-white transition-colors cursor-pointer"
             >
               <option value="">All Categories</option>
-              {CATEGORIES.map((c) => (
+              {categoryNames.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
@@ -203,14 +207,14 @@ export default function Listings() {
               className="border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-xl bg-gray-50 hover:bg-white transition-colors disabled:opacity-50 disabled:bg-gray-100 cursor-pointer"
               disabled={
                 !!category &&
-                (!CATEGORY_MAP[category] ||
-                  CATEGORY_MAP[category].length === 0)
+                (!categoryMap[category] ||
+                  categoryMap[category].length === 0)
               }
             >
               <option value="">All Sub-Categories</option>
-              {(category && CATEGORY_MAP[category]
-                ? CATEGORY_MAP[category]
-                : [...ALL_SUB_CATEGORIES]
+              {(category && categoryMap[category]
+                ? categoryMap[category]
+                : [...allSubCategories]
               ).map((sc) => (
                 <option key={sc} value={sc}>
                   {sc}
@@ -324,11 +328,10 @@ export default function Listings() {
                   <button
                     key={pageNumber}
                     onClick={() => goToPage(pageNumber)}
-                    className={`h-10 min-w-10 rounded-xl border px-3 text-sm font-semibold transition-colors cursor-pointer ${
-                      currentPage === pageNumber
+                    className={`h-10 min-w-10 rounded-xl border px-3 text-sm font-semibold transition-colors cursor-pointer ${currentPage === pageNumber
                         ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white shadow-sm'
                         : 'border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
-                    }`}
+                      }`}
                     aria-current={
                       currentPage === pageNumber ? 'page' : undefined
                     }

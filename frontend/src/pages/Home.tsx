@@ -437,7 +437,7 @@ export default function Home() {
                     items.push(
                       <a
                         key="inline-ad"
-                        href={inlineAd.link_url || '#'} 
+                        href={inlineAd?.link_url || '#'} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="bg-white border border-[var(--color-border)] overflow-hidden h-[130px] block"
@@ -511,7 +511,7 @@ export default function Home() {
                   Advertisement {idx + 1}
                 </div>
                 {displayUrl ? (
-                  <a href={adData.link_url || '#'} target="_blank" rel="noopener noreferrer" className="block h-[130px] w-full bg-gray-100">
+                  <a href={adData?.link_url || '#'} target="_blank" rel="noopener noreferrer" className="block h-[130px] w-full bg-gray-100">
                     <img src={displayUrl} alt={`Advertisement ${idx + 1}`} className="w-full h-full object-cover" />
                   </a>
                 ) : (

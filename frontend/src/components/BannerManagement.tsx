@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { Image as ImageIcon, Save, Loader2, Link as LinkIcon, Upload, Trash2 } from 'lucide-react';
 import { useBanners } from '../hooks/useBanners';
-import { API_URL } from '../constants';
 import { useToast } from './Toast';
 import { getImageUrl } from '../utils/imageUtils';
 

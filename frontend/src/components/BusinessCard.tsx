@@ -7,7 +7,6 @@ import {
   MessageCircle,
   Check,
 } from 'lucide-react';
-import { API_URL } from '../constants';
 import type { Business } from '../types';
 import { getImageUrl } from '../utils/imageUtils';
 

@@ -2,7 +2,6 @@ import { useState, useRef } from 'react';
 import { Link as LinkIcon, Save, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useToast } from './Toast';
 import { useAdvertisements } from '../hooks/useAdvertisements';
-import { API_URL } from '../constants';
 import { getImageUrl } from '../utils/imageUtils';
 
 export default function AdvertisementManagement() {

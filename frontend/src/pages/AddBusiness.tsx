@@ -8,25 +8,28 @@ import {
   MessageCircle,
   ShieldCheck,
   Sparkles,
+  MapPin,
 } from 'lucide-react';
 
 export default function AddBusiness() {
-  const [companyName, setCompanyName] = useState('');
   const [yourName, setYourName] = useState('');
+  const [city, setCity] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
 
-  const WHATSAPP_NUMBER = '918667573511'; // India country code + number
+  const WHATSAPP_NUMBER = '919952573997'; // India country code + target number
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!companyName.trim()) newErrors.companyName = 'Company name is required';
-    if (!yourName.trim()) newErrors.yourName = 'Your name is required';
-    if (!contactNumber.trim()) newErrors.contactNumber = 'Contact number is required';
+    if (!yourName.trim()) newErrors.yourName = 'Name is required';
+    if (!city.trim()) newErrors.city = 'City/Location is required';
+    if (!companyName.trim()) newErrors.companyName = 'Business name is required';
+    if (!contactNumber.trim()) newErrors.contactNumber = 'Mobile number is required';
     else if (!/^[\d\s+\-()]{7,15}$/.test(contactNumber))
-      newErrors.contactNumber = 'Enter a valid contact number';
+      newErrors.contactNumber = 'Enter a valid mobile number';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -39,9 +42,10 @@ export default function AddBusiness() {
 
     // Build the pre-filled WhatsApp message
     const message = `New Business Listing Request\n\n` +
-      `Company Name:${companyName.trim()}\n` +
-      `Contact Person:${yourName.trim()}\n` +
-      `Contact Number:${contactNumber.trim()}\n\n` +
+      `Name: ${yourName.trim()}\n` +
+      `City/Location: ${city.trim()}\n` +
+      `Business: ${companyName.trim()}\n` +
+      `Mobile: ${contactNumber.trim()}\n\n` +
       `I would like to add my business to Kodumudi News. Please process my request.`;
 
     const encodedMessage = encodeURIComponent(message);
@@ -80,8 +84,9 @@ export default function AddBusiness() {
             <button
               onClick={() => {
                 setSubmitted(false);
-                setCompanyName('');
                 setYourName('');
+                setCity('');
+                setCompanyName('');
                 setContactNumber('');
                 setErrors({});
               }}
@@ -152,44 +157,14 @@ export default function AddBusiness() {
           </p>
 
           <form onSubmit={handleSendRequest} className="space-y-5" id="add-business-form">
-            {/* Company Name */}
+            {/* Name */}
             <div className="add-biz-field-enter" style={{ animationDelay: '0.1s' }}>
-              <label
-                htmlFor="add-biz-company"
-                className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-secondary)] mb-2"
-              >
-                <Building2 className="w-4 h-4 text-[var(--color-primary)]" />
-                Company Name <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="add-biz-company"
-                type="text"
-                placeholder="e.g. ABC Textiles Pvt Ltd"
-                value={companyName}
-                onChange={(e) => {
-                  setCompanyName(e.target.value);
-                  if (errors.companyName) {
-                    setErrors((prev) => ({ ...prev, companyName: '' }));
-                  }
-                }}
-                className={inputClass('companyName')}
-              />
-              {errors.companyName && (
-                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                  <span className="w-1 h-1 bg-red-500 rounded-full" />
-                  {errors.companyName}
-                </p>
-              )}
-            </div>
-
-            {/* Your Name */}
-            <div className="add-biz-field-enter" style={{ animationDelay: '0.2s' }}>
               <label
                 htmlFor="add-biz-name"
                 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-secondary)] mb-2"
               >
                 <User className="w-4 h-4 text-[var(--color-primary)]" />
-                Your Name <span className="text-red-400">*</span>
+                Name <span className="text-red-400">*</span>
               </label>
               <input
                 id="add-biz-name"
@@ -212,14 +187,74 @@ export default function AddBusiness() {
               )}
             </div>
 
-            {/* Contact Number */}
+            {/* City/Location */}
+            <div className="add-biz-field-enter" style={{ animationDelay: '0.2s' }}>
+              <label
+                htmlFor="add-biz-city"
+                className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-secondary)] mb-2"
+              >
+                <MapPin className="w-4 h-4 text-[var(--color-primary)]" />
+                City/Location <span className="text-red-400">*</span>
+              </label>
+              <input
+                id="add-biz-city"
+                type="text"
+                placeholder="e.g. Kodumudi"
+                value={city}
+                onChange={(e) => {
+                  setCity(e.target.value);
+                  if (errors.city) {
+                    setErrors((prev) => ({ ...prev, city: '' }));
+                  }
+                }}
+                className={inputClass('city')}
+              />
+              {errors.city && (
+                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                  <span className="w-1 h-1 bg-red-500 rounded-full" />
+                  {errors.city}
+                </p>
+              )}
+            </div>
+
+            {/* Business (Company Name) */}
             <div className="add-biz-field-enter" style={{ animationDelay: '0.3s' }}>
+              <label
+                htmlFor="add-biz-company"
+                className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-secondary)] mb-2"
+              >
+                <Building2 className="w-4 h-4 text-[var(--color-primary)]" />
+                Business <span className="text-red-400">*</span>
+              </label>
+              <input
+                id="add-biz-company"
+                type="text"
+                placeholder="e.g. ABC Textiles Pvt Ltd"
+                value={companyName}
+                onChange={(e) => {
+                  setCompanyName(e.target.value);
+                  if (errors.companyName) {
+                    setErrors((prev) => ({ ...prev, companyName: '' }));
+                  }
+                }}
+                className={inputClass('companyName')}
+              />
+              {errors.companyName && (
+                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                  <span className="w-1 h-1 bg-red-500 rounded-full" />
+                  {errors.companyName}
+                </p>
+              )}
+            </div>
+
+            {/* Mobile (Contact Number) */}
+            <div className="add-biz-field-enter" style={{ animationDelay: '0.4s' }}>
               <label
                 htmlFor="add-biz-contact"
                 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-secondary)] mb-2"
               >
                 <Phone className="w-4 h-4 text-[var(--color-primary)]" />
-                Contact Number <span className="text-red-400">*</span>
+                Mobile <span className="text-red-400">*</span>
               </label>
               <input
                 id="add-biz-contact"
@@ -253,8 +288,6 @@ export default function AddBusiness() {
               <MessageCircle className="w-4 h-4 opacity-60" />
             </button>
           </form>
-
-          {/* Info Note */}
 
         </div>
       </div>

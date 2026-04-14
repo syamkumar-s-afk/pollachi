@@ -134,8 +134,8 @@ app.post('/api/businesses', auth, upload.single('imageFile'), async (req, res) =
   if (req.file) {
     try {
       image = await uploadToSupabase(req.file);
-    } catch (err) {
-      return res.status(500).json({ error: 'Image upload failed' });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message || 'Image upload failed' });
     }
   }
 
@@ -154,8 +154,8 @@ app.put('/api/businesses/:id', auth, upload.single('imageFile'), async (req, res
   if (req.file) {
     try {
       image = await uploadToSupabase(req.file);
-    } catch (err) {
-      return res.status(500).json({ error: 'Image upload failed' });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message || 'Image upload failed' });
     }
   }
 

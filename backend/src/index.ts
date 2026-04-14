@@ -4,8 +4,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jwt-simple';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import { getDb } from './db';
 
 const app = express();
@@ -18,21 +18,19 @@ app.use(helmet({
 app.use(cors());
 app.use(express.json());
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: { error: 'Too many requests from this IP, please try again after 15 minutes' }
-});
 
-// Apply rate limiting to all requests
-app.use('/api/', limiter);
 
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+const uploadDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+app.use('/uploads', express.static(uploadDir));
 
 // Storage for images
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads'));
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + '-' + file.originalname);
@@ -46,7 +44,7 @@ app.post('/api/login', async (req, res) => {
   const db = await getDb();
   const { rows } = await db.query('SELECT * FROM admin WHERE username = $1', [username]);
   const admin = rows[0];
-  
+
   if (admin && await bcrypt.compare(password, admin.password)) {
     const token = jwt.encode({ id: admin.id, exp: Date.now() + 1000 * 60 * 60 * 24 }, JWT_SECRET);
     res.json({ token });
@@ -76,7 +74,7 @@ app.get('/api/businesses', async (req, res) => {
   const page = Math.max(1, parseInt(rawPage as string, 10) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(rawLimit as string, 10) || 20));
   const offset = (page - 1) * limit;
-  
+
   let whereClause = ' WHERE 1=1';
   const params: any[] = [];
   let paramIndex = 1;
@@ -130,15 +128,15 @@ app.put('/api/businesses/:id', auth, upload.single('imageFile'), async (req, res
   }
 
   if (req.file) {
-      await db.query(
-        `UPDATE businesses SET name=$1, category=$2, sub_category=$3, city=$4, address=$5, phone=$6, whatsapp=$7, image=$8, adId=$9 WHERE id=$10`,
-        [name, category, sub_category, city, address, phone, whatsapp, image, adId, req.params.id]
-      );
+    await db.query(
+      `UPDATE businesses SET name=$1, category=$2, sub_category=$3, city=$4, address=$5, phone=$6, whatsapp=$7, image=$8, adId=$9 WHERE id=$10`,
+      [name, category, sub_category, city, address, phone, whatsapp, image, adId, req.params.id]
+    );
   } else {
-      await db.query(
-        `UPDATE businesses SET name=$1, category=$2, sub_category=$3, city=$4, address=$5, phone=$6, whatsapp=$7, adId=$8 WHERE id=$9`,
-        [name, category, sub_category, city, address, phone, whatsapp, adId, req.params.id]
-      );
+    await db.query(
+      `UPDATE businesses SET name=$1, category=$2, sub_category=$3, city=$4, address=$5, phone=$6, whatsapp=$7, adId=$8 WHERE id=$9`,
+      [name, category, sub_category, city, address, phone, whatsapp, adId, req.params.id]
+    );
   }
   res.json({ success: true });
 });
@@ -147,6 +145,417 @@ app.delete('/api/businesses/:id', auth, async (req, res) => {
   const db = await getDb();
   await db.query('DELETE FROM businesses WHERE id = $1', [req.params.id]);
   res.json({ success: true });
+});
+
+// Helper function to generate slug
+const generateSlug = (name: string): string => {
+  return name.toLowerCase().replace(/\s+/g, '-').replace(/[^\p{L}\p{N}_\-]/gu, '').substring(0, 100);
+};
+
+// Helper function to get business count for a category
+const getBusinessCountForCategory = async (db: any, categoryName: string): Promise<number> => {
+  const result = await db.query('SELECT COUNT(*) as cnt FROM businesses WHERE LOWER(category) = LOWER($1)', [categoryName]);
+  return parseInt(result.rows[0].cnt, 10);
+};
+
+// Helper function to get business count for a subcategory
+const getBusinessCountForSubcategory = async (db: any, subcategoryName: string): Promise<number> => {
+  const result = await db.query('SELECT COUNT(*) as cnt FROM businesses WHERE LOWER(sub_category) = LOWER($1)', [subcategoryName]);
+  return parseInt(result.rows[0].cnt, 10);
+};
+
+// ─── CATEGORY ENDPOINTS ───
+
+// GET /api/categories - Fetch all categories with nested subcategories (public)
+app.get('/api/categories', async (req, res) => {
+  try {
+    const db = await getDb();
+    const categoriesResult = await db.query(
+      'SELECT id, name, slug, description, created_at, updated_at FROM categories ORDER BY created_at DESC'
+    );
+
+    const categories = categoriesResult.rows;
+    const categoriesWithSubs = await Promise.all(
+      categories.map(async (cat: any) => {
+        const subsResult = await db.query(
+          'SELECT id, category_id, name, slug, created_at, updated_at FROM subcategories WHERE category_id = $1 ORDER BY created_at ASC',
+          [cat.id]
+        );
+        return {
+          ...cat,
+          subcategories: subsResult.rows
+        };
+      })
+    );
+
+    res.json({ data: categoriesWithSubs, total: categoriesWithSubs.length });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch categories', code: 'ERROR' });
+  }
+});
+
+// POST /api/categories - Create category (protected)
+app.post('/api/categories', auth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const { name, description } = req.body;
+
+    if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100) {
+      return res.status(400).json({
+        error: 'Category name must be between 2 and 100 characters',
+        code: 'INVALID_NAME'
+      });
+    }
+
+    const slug = generateSlug(name);
+    const trimmedName = name.trim();
+
+    // Check for duplicate (case-insensitive)
+    const duplicateCheck = await db.query(
+      'SELECT id FROM categories WHERE LOWER(name) = LOWER($1)',
+      [trimmedName]
+    );
+
+    if (duplicateCheck.rowCount && duplicateCheck.rowCount > 0) {
+      return res.status(409).json({
+        error: `Category '${trimmedName}' already exists`,
+        code: 'DUPLICATE_NAME'
+      });
+    }
+
+    const result = await db.query(
+      'INSERT INTO categories (name, slug, description, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id, name, slug, description, created_at, updated_at',
+      [trimmedName, slug, description || null]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to create category', code: 'ERROR' });
+  }
+});
+
+// PUT /api/categories/:id - Update category (protected)
+app.put('/api/categories/:id', auth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const { id } = req.params;
+    const { name, description } = req.body;
+
+    if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100) {
+      return res.status(400).json({
+        error: 'Category name must be between 2 and 100 characters',
+        code: 'INVALID_NAME'
+      });
+    }
+
+    const trimmedName = name.trim();
+
+    // Check if category exists
+    const categoryCheck = await db.query('SELECT name FROM categories WHERE id = $1', [id]);
+    if (!categoryCheck.rowCount || categoryCheck.rowCount === 0) {
+      return res.status(404).json({ error: 'Category not found', code: 'NOT_FOUND' });
+    }
+
+    const originalName = categoryCheck.rows[0].name;
+
+    // Check for duplicate (case-insensitive, excluding current)
+    if (trimmedName.toLowerCase() !== originalName.toLowerCase()) {
+      const duplicateCheck = await db.query(
+        'SELECT id FROM categories WHERE LOWER(name) = LOWER($1) AND id != $2',
+        [trimmedName, id]
+      );
+
+      if (duplicateCheck.rowCount && duplicateCheck.rowCount > 0) {
+        return res.status(409).json({
+          error: `Category '${trimmedName}' already exists`,
+          code: 'DUPLICATE_NAME'
+        });
+      }
+    }
+
+    const slug = generateSlug(trimmedName);
+
+    await db.query(
+      'UPDATE categories SET name = $1, slug = $2, description = $3, updated_at = NOW() WHERE id = $4',
+      [trimmedName, slug, description || null, id]
+    );
+
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update category', code: 'ERROR' });
+  }
+});
+
+// DELETE /api/categories/:id - Delete category with usage validation (protected)
+app.delete('/api/categories/:id', auth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const { id } = req.params;
+
+    // Check if category exists
+    const categoryCheck = await db.query('SELECT name FROM categories WHERE id = $1', [id]);
+    if (!categoryCheck.rowCount || categoryCheck.rowCount === 0) {
+      return res.status(404).json({ error: 'Category not found', code: 'NOT_FOUND' });
+    }
+
+    const categoryName = categoryCheck.rows[0].name;
+
+    // Check if any business uses this category
+    const usageCount = await getBusinessCountForCategory(db, categoryName);
+    if (usageCount > 0) {
+      return res.status(409).json({
+        error: `Cannot delete: ${usageCount} business${usageCount !== 1 ? 'es' : ''} use${usageCount !== 1 ? '' : 's'} this category`,
+        code: 'IN_USE',
+        usageCount
+      });
+    }
+
+    // Delete category (subcategories cascade due to FK constraint)
+    await db.query('DELETE FROM categories WHERE id = $1', [id]);
+
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to delete category', code: 'ERROR' });
+  }
+});
+
+// ─── SUBCATEGORY ENDPOINTS ───
+
+// POST /api/categories/:id/subcategories - Create subcategory (protected)
+app.post('/api/categories/:id/subcategories', auth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const { id: categoryId } = req.params;
+    const { name } = req.body;
+
+    if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100) {
+      return res.status(400).json({
+        error: 'Subcategory name must be between 2 and 100 characters',
+        code: 'INVALID_NAME'
+      });
+    }
+
+    // Check if category exists
+    const categoryCheck = await db.query('SELECT id FROM categories WHERE id = $1', [categoryId]);
+    if (!categoryCheck.rowCount || categoryCheck.rowCount === 0) {
+      return res.status(404).json({ error: 'Category not found', code: 'NOT_FOUND' });
+    }
+
+    const trimmedName = name.trim();
+
+    // Check for duplicate within this category (case-insensitive)
+    const duplicateCheck = await db.query(
+      'SELECT id FROM subcategories WHERE category_id = $1 AND LOWER(name) = LOWER($2)',
+      [categoryId, trimmedName]
+    );
+
+    if (duplicateCheck.rowCount && duplicateCheck.rowCount > 0) {
+      return res.status(409).json({
+        error: `Subcategory '${trimmedName}' already exists in this category`,
+        code: 'DUPLICATE_NAME'
+      });
+    }
+
+    const slug = generateSlug(trimmedName);
+
+    const result = await db.query(
+      'INSERT INTO subcategories (category_id, name, slug, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id, category_id, name, slug, created_at, updated_at',
+      [categoryId, trimmedName, slug]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to create subcategory', code: 'ERROR' });
+  }
+});
+
+// PUT /api/subcategories/:id - Update subcategory (protected)
+app.put('/api/subcategories/:id', auth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100) {
+      return res.status(400).json({
+        error: 'Subcategory name must be between 2 and 100 characters',
+        code: 'INVALID_NAME'
+      });
+    }
+
+    // Check if subcategory exists
+    const subcatCheck = await db.query('SELECT category_id, name FROM subcategories WHERE id = $1', [id]);
+    if (!subcatCheck.rowCount || subcatCheck.rowCount === 0) {
+      return res.status(404).json({ error: 'Subcategory not found', code: 'NOT_FOUND' });
+    }
+
+    const categoryId = subcatCheck.rows[0].category_id;
+    const originalName = subcatCheck.rows[0].name;
+    const trimmedName = name.trim();
+
+    // Check for duplicate within same category (case-insensitive, excluding current)
+    if (trimmedName.toLowerCase() !== originalName.toLowerCase()) {
+      const duplicateCheck = await db.query(
+        'SELECT id FROM subcategories WHERE category_id = $1 AND LOWER(name) = LOWER($2) AND id != $3',
+        [categoryId, trimmedName, id]
+      );
+
+      if (duplicateCheck.rowCount && duplicateCheck.rowCount > 0) {
+        return res.status(409).json({
+          error: `Subcategory '${trimmedName}' already exists in this category`,
+          code: 'DUPLICATE_NAME'
+        });
+      }
+    }
+
+    const slug = generateSlug(trimmedName);
+
+    await db.query(
+      'UPDATE subcategories SET name = $1, slug = $2, updated_at = NOW() WHERE id = $3',
+      [trimmedName, slug, id]
+    );
+
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update subcategory', code: 'ERROR' });
+  }
+});
+
+// DELETE /api/subcategories/:id - Delete subcategory (protected)
+app.delete('/api/subcategories/:id', auth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const { id } = req.params;
+
+    // Check if subcategory exists
+    const subcatCheck = await db.query('SELECT name FROM subcategories WHERE id = $1', [id]);
+    if (!subcatCheck.rowCount || subcatCheck.rowCount === 0) {
+      return res.status(404).json({ error: 'Subcategory not found', code: 'NOT_FOUND' });
+    }
+
+    const subcategoryName = subcatCheck.rows[0].name;
+
+    // Check if any business uses this subcategory
+    const usageCount = await getBusinessCountForSubcategory(db, subcategoryName);
+    if (usageCount > 0) {
+      return res.status(409).json({
+        error: `Cannot delete: ${usageCount} business${usageCount !== 1 ? 'es' : ''} use${usageCount !== 1 ? '' : 's'} this subcategory`,
+        code: 'IN_USE',
+        usageCount
+      });
+    }
+
+    // Delete subcategory
+    await db.query('DELETE FROM subcategories WHERE id = $1', [id]);
+
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to delete subcategory', code: 'ERROR' });
+  }
+});
+
+// ─── ADVERTISEMENT ENDPOINTS ───
+
+// GET /api/advertisements - Fetch all advertisements (public)
+app.get('/api/advertisements', async (req, res) => {
+  try {
+    const db = await getDb();
+    const result = await db.query('SELECT id, slot, image_url, link_url, updated_at FROM advertisements ORDER BY slot ASC');
+    res.json({ data: result.rows });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch advertisements', code: 'ERROR' });
+  }
+});
+
+// PUT /api/advertisements/:slot - Update advertisement (protected)
+app.put('/api/advertisements/:slot', auth, upload.single('imageFile'), async (req, res) => {
+  try {
+    const db = await getDb();
+    const { slot } = req.params;
+    const { link_url } = req.body;
+    let image_url = req.body.image_url;
+
+    if (req.file) {
+      image_url = `/uploads/${req.file.filename}`;
+    }
+
+    const check = await db.query('SELECT * FROM advertisements WHERE slot = $1', [slot]);
+    if (!check.rowCount || check.rowCount === 0) {
+      // Create slot dynamically if it doesn't exist
+      await db.query(
+        'INSERT INTO advertisements (slot, image_url, link_url, updated_at) VALUES ($1, $2, $3, NOW())',
+        [slot, image_url || '', link_url || '']
+      );
+    } else {
+      // Update existing slot
+      if (req.file || image_url !== undefined) {
+        await db.query(
+          'UPDATE advertisements SET image_url=$1, link_url=$2, updated_at=NOW() WHERE slot=$3',
+          [image_url, link_url || '', slot]
+        );
+      } else {
+        await db.query(
+          'UPDATE advertisements SET link_url=$1, updated_at=NOW() WHERE slot=$2',
+          [link_url || '', slot]
+        );
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update advertisement', code: 'ERROR' });
+  }
+});
+
+// ─── BANNER ENDPOINTS ───
+
+// GET /api/banners - Fetch all banners (public)
+app.get('/api/banners', async (req, res) => {
+  try {
+    const db = await getDb();
+    const result = await db.query('SELECT id, slot, image_url, link_url, updated_at FROM banners ORDER BY slot ASC');
+    res.json({ data: result.rows });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch banners', code: 'ERROR' });
+  }
+});
+
+// PUT /api/banners/:slot - Update banner image/link (protected)
+app.put('/api/banners/:slot', auth, upload.single('imageFile'), async (req, res) => {
+  try {
+    const db = await getDb();
+    const { slot } = req.params;
+    const { link_url } = req.body;
+    let image_url = req.body.image_url;
+
+    if (req.file) {
+      image_url = `/uploads/${req.file.filename}`;
+    }
+
+    const check = await db.query('SELECT id FROM banners WHERE slot = $1', [slot]);
+    if (!check.rowCount || check.rowCount === 0) {
+      await db.query(
+        'INSERT INTO banners (slot, image_url, link_url, updated_at) VALUES ($1, $2, $3, NOW())',
+        [slot, image_url || '', link_url || '']
+      );
+    } else {
+      if (req.file || image_url !== undefined) {
+        await db.query(
+          'UPDATE banners SET image_url=$1, link_url=$2, updated_at=NOW() WHERE slot=$3',
+          [image_url, link_url || '', slot]
+        );
+      } else {
+        await db.query(
+          'UPDATE banners SET link_url=$1, updated_at=NOW() WHERE slot=$2',
+          [link_url || '', slot]
+        );
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update banner', code: 'ERROR' });
+  }
 });
 
 app.listen(port, () => {

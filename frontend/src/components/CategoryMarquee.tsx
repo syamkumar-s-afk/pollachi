@@ -14,22 +14,22 @@ import {
   Apple,
   ChefHat,
 } from 'lucide-react';
-import { CATEGORIES } from '../constants';
+import { useCategories } from '../hooks/useCategories';
 
 /* ─── Icon map for each category ─── */
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  Education: <GraduationCap className="w-4 h-4" />,
-  Finance: <Landmark className="w-4 h-4" />,
-  'Food & Beverage': <UtensilsCrossed className="w-4 h-4" />,
-  Healthcare: <HeartPulse className="w-4 h-4" />,
-  'Real Estate': <Home className="w-4 h-4" />,
-  Retail: <ShoppingBag className="w-4 h-4" />,
-  Services: <Wrench className="w-4 h-4" />,
-  Technology: <Cpu className="w-4 h-4" />,
-  'Travel & Transport': <Bus className="w-4 h-4" />,
-  Automotive: <Car className="w-4 h-4" />,
-  Grocery: <Apple className="w-4 h-4" />,
-  Restaurant: <ChefHat className="w-4 h-4" />,
+  Education: <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4" />,
+  Finance: <Landmark className="w-3 h-3 sm:w-4 sm:h-4" />,
+  'Food & Beverage': <UtensilsCrossed className="w-3 h-3 sm:w-4 sm:h-4" />,
+  Healthcare: <HeartPulse className="w-3 h-3 sm:w-4 sm:h-4" />,
+  'Real Estate': <Home className="w-3 h-3 sm:w-4 sm:h-4" />,
+  Retail: <ShoppingBag className="w-3 h-3 sm:w-4 sm:h-4" />,
+  Services: <Wrench className="w-3 h-3 sm:w-4 sm:h-4" />,
+  Technology: <Cpu className="w-3 h-3 sm:w-4 sm:h-4" />,
+  'Travel & Transport': <Bus className="w-3 h-3 sm:w-4 sm:h-4" />,
+  Automotive: <Car className="w-3 h-3 sm:w-4 sm:h-4" />,
+  Grocery: <Apple className="w-3 h-3 sm:w-4 sm:h-4" />,
+  Restaurant: <ChefHat className="w-3 h-3 sm:w-4 sm:h-4" />,
 };
 
 /* ─── Gradient colours for pills (cycle through) ─── */
@@ -49,6 +49,7 @@ const PILL_COLORS = [
 ];
 
 export default function CategoryMarquee() {
+  const { categories } = useCategories();
   const navigate = useNavigate();
   const trackRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -62,7 +63,8 @@ export default function CategoryMarquee() {
   const mouseDownXRef = useRef(0);
 
   /* ─── Categories duplicated 4× for seamless infinite loop ─── */
-  const items = [...CATEGORIES, ...CATEGORIES, ...CATEGORIES, ...CATEGORIES];
+  const categoryNames = categories.map(c => c.name);
+  const items = categoryNames.length > 0 ? [...categoryNames, ...categoryNames, ...categoryNames, ...categoryNames] : [];
 
   /* ─── Animation loop ─── */
   const animate = useCallback(() => {
@@ -150,7 +152,7 @@ export default function CategoryMarquee() {
   };
 
   return (
-    <div className="relative mb-5">
+    <div className="relative mb-3 sm:mb-5">
       {/* Left / Right edge fade masks */}
       <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-r from-[var(--color-background-gray)] to-transparent" />
       <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-[var(--color-background-gray)] to-transparent" />
@@ -158,7 +160,7 @@ export default function CategoryMarquee() {
       {/* Scrollable track */}
       <div
         ref={trackRef}
-        className={`marquee-track overflow-x-hidden whitespace-nowrap py-3 select-none ${
+        className={`marquee-track overflow-x-hidden whitespace-nowrap py-1.5 sm:py-3 select-none ${
           isDragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -171,7 +173,7 @@ export default function CategoryMarquee() {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="inline-flex gap-3">
+        <div className="inline-flex gap-1.5 sm:gap-3">
           {items.map((cat, idx) => (
             <div
               key={`${cat}-${idx}`}
@@ -180,10 +182,10 @@ export default function CategoryMarquee() {
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter') handlePillClick(cat); }}
               className={`
-                inline-flex items-center gap-2 px-5 py-2.5
+                inline-flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5
                 bg-gradient-to-br ${PILL_COLORS[idx % PILL_COLORS.length]}
-                border rounded-full
-                font-semibold text-[13px] tracking-wide
+                border
+                font-semibold text-[10px] sm:text-[13px] tracking-wide
                 hover:scale-105 hover:shadow-md
                 transition-all duration-200
                 flex-shrink-0 cursor-pointer

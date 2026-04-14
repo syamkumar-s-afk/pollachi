@@ -55,7 +55,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  to="/admin"
+                  to="/add-business"
                   className="hover:text-white transition-colors flex items-center gap-2 group"
                 >
                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />

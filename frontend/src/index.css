@@ -248,3 +248,55 @@ html {
 .modal-content {
   animation: modalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* ───────────── Add Business Page Animations ───────────── */
+
+@keyframes addBizFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes addBizFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes addBizBounce {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  80% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes addBizFieldEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.add-biz-fade-in {
+  animation: addBizFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.add-biz-float {
+  animation: addBizFloat 3s ease-in-out infinite;
+}
+
+.add-biz-bounce {
+  animation: addBizBounce 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.add-biz-field-enter {
+  animation: addBizFieldEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

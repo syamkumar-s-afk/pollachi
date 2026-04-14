@@ -6,16 +6,12 @@ import {
   RefreshCw,
   AlertCircle,
   Megaphone,
-  SlidersHorizontal,
+  Search,
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useBusinesses } from '../hooks/useBusinesses';
-import {
-  CATEGORIES,
-  CITIES,
-  ALL_SUB_CATEGORIES,
-  CATEGORY_MAP,
-} from '../constants';
+import { CITIES } from '../constants';
+import { useCategories } from '../hooks/useCategories';
 import BusinessCard from '../components/BusinessCard';
 
 export default function Listings() {
@@ -30,6 +26,14 @@ export default function Listings() {
   const [subCategory, setSubCategory] = useState(
     searchParams.get('sub_category') || ''
   );
+
+  const { categories: dynamicCategories } = useCategories();
+  const categoryNames = dynamicCategories.map(c => c.name);
+  const categoryMap: { [key: string]: string[] } = {};
+  dynamicCategories.forEach(c => {
+    categoryMap[c.name] = c.subcategories?.map(sc => sc.name) || [];
+  });
+  const allSubCategories = Array.from(new Set(dynamicCategories.flatMap(c => c.subcategories?.map(sc => sc.name) || [])));
 
   const {
     businesses,
@@ -63,8 +67,8 @@ export default function Listings() {
   useEffect(() => {
     if (
       category &&
-      CATEGORY_MAP[category] &&
-      !CATEGORY_MAP[category].includes(subCategory)
+      categoryMap[category] &&
+      !categoryMap[category].includes(subCategory)
     ) {
       setSubCategory('');
     }
@@ -100,131 +104,101 @@ export default function Listings() {
 
   return (
     <div className="space-y-6">
-      {/* ─── Title Section ─── */}
-      <div
-        ref={listingsRef}
-        className="bg-gradient-to-r from-white to-gray-50 p-6 md:p-8 shadow-sm border border-[var(--color-border)] rounded-xl"
-      >
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black text-[var(--color-text-primary)] tracking-tight">
-              Business Listings
-            </h1>
-            <p className="text-sm text-[var(--color-text-muted)] font-medium mt-1.5">
-              Filter and find the best local businesses across Tamil Nadu.
-            </p>
-          </div>
-          {!loading && totalItems > 0 && (
-            <div
-              className="bg-white border border-[var(--color-border)] rounded-lg px-4 py-2 text-sm text-[var(--color-text-secondary)] shadow-sm flex-shrink-0"
-              aria-live="polite"
-            >
-              Showing{' '}
-              <span className="font-semibold text-[var(--color-text-primary)]">
-                {startItem}–{endItem}
-              </span>{' '}
-              of{' '}
-              <span className="font-semibold text-[var(--color-text-primary)]">
-                {totalItems}
-              </span>
-            </div>
-          )}
+      {/* ─── Search / Filter Section (matching Home layout) ─── */}
+      <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-3">
+        {/* Left: Title */}
+        <div className="flex-shrink-0">
+          <p className="text-[var(--color-primary)] text-[10px] font-bold uppercase tracking-wide mb-0.5">
+            Directory
+          </p>
+          <h1 className="text-lg md:text-xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-tight">
+            Business Listings
+          </h1>
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+            Filter and find the best local businesses across Tamil Nadu.
+          </p>
         </div>
-      </div>
 
-      {/* ─── Filter Bar ─── */}
-      <div className="bg-white p-4 shadow-sm border border-[var(--color-border)] rounded-xl">
-        <div className="flex items-center gap-2 mb-3">
-          <SlidersHorizontal className="w-4 h-4 text-[var(--color-text-muted)]" />
-          <span className="text-sm font-semibold text-[var(--color-text-secondary)]">
-            Filters
-          </span>
-          {activeFilterCount > 0 && (
-            <span className="text-[10px] font-bold bg-[var(--color-primary)] text-white px-2 py-0.5 rounded-full">
-              {activeFilterCount}
-            </span>
-          )}
-          {activeFilterCount > 0 && (
-            <button
-              onClick={clearFilters}
-              className="ml-auto text-xs font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors cursor-pointer"
-            >
-              Clear all
-            </button>
-          )}
-        </div>
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="flex-grow">
-            <label htmlFor="filter-city" className="sr-only">
-              Select district
-            </label>
+        {/* Right: Filters inline */}
+        <div className="flex flex-row w-full sm:w-auto gap-1.5 sm:gap-2 flex-grow overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex-1 min-w-[80px]">
+            <label htmlFor="filter-city" className="sr-only">Select district</label>
             <select
               id="filter-city"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-xl bg-gray-50 hover:bg-white transition-colors cursor-pointer"
+              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-[11px] sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2 sm:p-2.5 transition-colors cursor-pointer"
             >
-              <option value="">All Districts</option>
+              <option value="">City</option>
               {CITIES.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
+                <option key={d} value={d}>{d}</option>
               ))}
             </select>
           </div>
-
-          <div className="flex-grow">
-            <label htmlFor="filter-category" className="sr-only">
-              Select category
-            </label>
+          <div className="flex-1 min-w-[90px]">
+            <label htmlFor="filter-category" className="sr-only">Select category</label>
             <select
               id="filter-category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-xl bg-gray-50 hover:bg-white transition-colors cursor-pointer"
+              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-[11px] sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2 sm:p-2.5 transition-colors cursor-pointer"
             >
-              <option value="">All Categories</option>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+              <option value="">Category</option>
+              {categoryNames.map((c) => (
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </div>
-
-          <div className="flex-grow">
-            <label htmlFor="filter-subcategory" className="sr-only">
-              Select sub-category
-            </label>
+          <div className="flex-1 min-w-[95px]">
+            <label htmlFor="filter-subcategory" className="sr-only">Select sub-category</label>
             <select
               id="filter-subcategory"
               value={subCategory}
               onChange={(e) => setSubCategory(e.target.value)}
-              className="border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-3 rounded-xl bg-gray-50 hover:bg-white transition-colors disabled:opacity-50 disabled:bg-gray-100 cursor-pointer"
+              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-[11px] sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2 sm:p-2.5 transition-colors cursor-pointer disabled:opacity-50 disabled:bg-gray-100"
               disabled={
                 !!category &&
-                (!CATEGORY_MAP[category] ||
-                  CATEGORY_MAP[category].length === 0)
+                (!categoryMap[category] || categoryMap[category].length === 0)
               }
             >
-              <option value="">All Sub-Categories</option>
-              {(category && CATEGORY_MAP[category]
-                ? CATEGORY_MAP[category]
-                : [...ALL_SUB_CATEGORIES]
+              <option value="">Sub Category</option>
+              {(category && categoryMap[category]
+                ? categoryMap[category]
+                : [...allSubCategories]
               ).map((sc) => (
-                <option key={sc} value={sc}>
-                  {sc}
-                </option>
+                <option key={sc} value={sc}>{sc}</option>
               ))}
             </select>
           </div>
+          {activeFilterCount > 0 && (
+            <button
+              onClick={clearFilters}
+              className="bg-gray-100 hover:bg-gray-200 text-[var(--color-text-secondary)] p-2 px-3 sm:p-2.5 sm:px-4 flex items-center justify-center shrink-0 transition-colors cursor-pointer text-xs font-semibold rounded-none"
+              aria-label="Clear filters"
+            >
+              Clear
+            </button>
+          )}
+          <button
+            onClick={() => fetchPage(1)}
+            className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white p-2 px-3 sm:p-2.5 sm:px-4 flex items-center justify-center shrink-0 transition-colors cursor-pointer rounded-r-none sm:rounded-none"
+            aria-label="Search businesses"
+          >
+            <Search className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
         </div>
       </div>
 
       {/* ─── Main Content Area ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div ref={listingsRef} className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Listings */}
         <div className="lg:col-span-3" aria-live="polite">
+          {/* Results count */}
+          {!loading && !error && totalItems > 0 && (
+            <p className="text-xs text-[var(--color-text-muted)] mb-3">
+              Showing <span className="font-semibold text-[var(--color-text-secondary)]">{startItem}–{endItem}</span> of <span className="font-semibold text-[var(--color-text-secondary)]">{totalItems}</span> results
+            </p>
+          )}
           {/* Error State */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-10 text-center">
@@ -324,11 +298,10 @@ export default function Listings() {
                   <button
                     key={pageNumber}
                     onClick={() => goToPage(pageNumber)}
-                    className={`h-10 min-w-10 rounded-xl border px-3 text-sm font-semibold transition-colors cursor-pointer ${
-                      currentPage === pageNumber
+                    className={`h-10 min-w-10 rounded-xl border px-3 text-sm font-semibold transition-colors cursor-pointer ${currentPage === pageNumber
                         ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white shadow-sm'
                         : 'border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
-                    }`}
+                      }`}
                     aria-current={
                       currentPage === pageNumber ? 'page' : undefined
                     }

@@ -1,53 +1,10 @@
 /**
  * Centralized application constants.
- * Single source of truth for categories, cities, and sub-categories
- * used across Home, Listings, and Admin pages.
+ * Single source of truth for cities and other constants used across the application.
+ *
+ * NOTE: Categories are now managed dynamically via the API (/api/categories)
+ * See useCategories hook for fetching and managing categories.
  */
-
-export const CATEGORIES = [
-  'Education',
-  'Finance',
-  'Food & Beverage',
-  'Healthcare',
-  'Real Estate',
-  'Retail',
-  'Services',
-  'Technology',
-  'Travel & Transport',
-  'Automotive',
-  'Grocery',
-  'Restaurant',
-] as const;
-
-export const ALL_SUB_CATEGORIES = [
-  'School',
-  'College',
-  'Restaurant',
-  'Cafe',
-  'Hospital',
-  'Clinic',
-  'Pharmacy',
-  'Supermarket',
-  "Men's Wear",
-  "Women's Wear",
-  'Electronics',
-  'Automotive Repair',
-  'Hotels',
-  'Vegetable, Milk',
-  'Non-veg',
-  'Veg',
-] as const;
-
-export const CATEGORY_MAP: Record<string, string[]> = {
-  Education: ['School', 'College'],
-  'Food & Beverage': ['Cafe'],
-  Healthcare: ['Hospital', 'Clinic', 'Pharmacy'],
-  Retail: ['Supermarket', "Men's Wear", "Women's Wear", 'Electronics'],
-  Services: ['Hotels'],
-  Automotive: ['Automotive Repair'],
-  Grocery: ['Vegetable, Milk'],
-  Restaurant: ['Veg', 'Non-veg', 'Restaurant'],
-};
 
 export const CITIES = [
   'Ariyalur',
@@ -93,3 +50,4 @@ export const CITIES = [
 export const ITEMS_PER_PAGE = 20;
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+

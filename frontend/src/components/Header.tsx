@@ -9,6 +9,7 @@ export default function Header() {
   const tabs = [
     { name: 'Home', id: '1', path: '/' },
     { name: 'Listings', id: '2', path: '/listings' },
+    { name: 'Admin', id: '3', path: '/admin' },
   ];
 
   const isActive = (path: string) => {

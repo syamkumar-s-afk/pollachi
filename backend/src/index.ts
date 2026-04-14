@@ -6,7 +6,16 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import helmet from 'helmet';
+import dotenv from 'dotenv';
 import { getDb } from './db';
+import { createClient } from '@supabase/supabase-js';
+
+dotenv.config();
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SECRET_KEY!
+);
 
 const app = express();
 const port = 3001;
@@ -20,23 +29,35 @@ app.use(express.json());
 
 
 
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-app.use('/uploads', express.static(uploadDir));
-
-// Storage for images
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
+// Storage for images in memory before uploading to Supabase
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
-const upload = multer({ storage });
+
+// Helper to upload to Supabase Storage
+async function uploadToSupabase(file: Express.Multer.File): Promise<string> {
+  const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+  
+  const { data, error } = await supabase.storage
+    .from('images')
+    .upload(fileName, file.buffer, {
+      contentType: file.mimetype,
+      upsert: false
+    });
+
+  if (error) {
+    console.error('Supabase upload error:', error);
+    throw new Error('Failed to upload to Supabase');
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('images')
+    .getPublicUrl(fileName);
+
+  return publicUrl;
+}
 
 // Admin Login
 app.post('/api/login', async (req, res) => {
@@ -108,7 +129,11 @@ app.post('/api/businesses', auth, upload.single('imageFile'), async (req, res) =
   let image = req.body.image || '';
 
   if (req.file) {
-    image = `/uploads/${req.file.filename}`;
+    try {
+      image = await uploadToSupabase(req.file);
+    } catch (err) {
+      return res.status(500).json({ error: 'Image upload failed' });
+    }
   }
 
   const result = await db.query(
@@ -124,7 +149,11 @@ app.put('/api/businesses/:id', auth, upload.single('imageFile'), async (req, res
   let image = req.body.image;
 
   if (req.file) {
-    image = `/uploads/${req.file.filename}`;
+    try {
+      image = await uploadToSupabase(req.file);
+    } catch (err) {
+      return res.status(500).json({ error: 'Image upload failed' });
+    }
   }
 
   if (req.file) {
@@ -476,7 +505,11 @@ app.put('/api/advertisements/:slot', auth, upload.single('imageFile'), async (re
     let image_url = req.body.image_url;
 
     if (req.file) {
-      image_url = `/uploads/${req.file.filename}`;
+      try {
+        image_url = await uploadToSupabase(req.file);
+      } catch (err) {
+        return res.status(500).json({ error: 'Image upload failed' });
+      }
     }
 
     const check = await db.query('SELECT * FROM advertisements WHERE slot = $1', [slot]);
@@ -529,7 +562,11 @@ app.put('/api/banners/:slot', auth, upload.single('imageFile'), async (req, res)
     let image_url = req.body.image_url;
 
     if (req.file) {
-      image_url = `/uploads/${req.file.filename}`;
+      try {
+        image_url = await uploadToSupabase(req.file);
+      } catch (err) {
+        return res.status(500).json({ error: 'Image upload failed' });
+      }
     }
 
     const check = await db.query('SELECT id FROM banners WHERE slot = $1', [slot]);

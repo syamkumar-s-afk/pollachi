@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { API_URL } from '../constants';
 import type { Business } from '../types';
+import { getImageUrl } from '../utils/imageUtils';
 
 interface BusinessCardProps {
   business: Business;
@@ -29,9 +30,7 @@ export default function BusinessCard({
 }: BusinessCardProps) {
   const [copied, setCopied] = useState(false);
 
-  const imageUrl = biz.image?.startsWith('/uploads')
-    ? `${API_URL}${biz.image}`
-    : biz.image || 'https://placehold.co/400x300?text=No+Image';
+  const imageUrl = getImageUrl(biz.image);
 
   const handleShare = async () => {
     const shareData = {

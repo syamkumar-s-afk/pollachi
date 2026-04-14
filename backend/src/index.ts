@@ -38,10 +38,12 @@ const upload = multer({
 
 // Helper to upload to Supabase Storage
 async function uploadToSupabase(file: Express.Multer.File): Promise<string> {
-  const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+  const fileExt = path.extname(file.originalname).toLowerCase();
+  const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}${fileExt}`;
+  const bucketName = 'product-images';
   
   const { data, error } = await supabase.storage
-    .from('images')
+    .from(bucketName)
     .upload(fileName, file.buffer, {
       contentType: file.mimetype,
       upsert: false
@@ -49,11 +51,12 @@ async function uploadToSupabase(file: Express.Multer.File): Promise<string> {
 
   if (error) {
     console.error('Supabase upload error:', error);
-    throw new Error('Failed to upload to Supabase');
+    // Suggest bucket existence fix in error message
+    throw new Error(`Failed to upload to Supabase bucket "${bucketName}". Please ensure the bucket exists and is public.`);
   }
 
   const { data: { publicUrl } } = supabase.storage
-    .from('images')
+    .from(bucketName)
     .getPublicUrl(fileName);
 
   return publicUrl;

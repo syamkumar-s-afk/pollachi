@@ -19,12 +19,11 @@ import { useCategories } from '../hooks/useCategories';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { useBanners } from '../hooks/useBanners';
 import CategoryMarquee from '../components/CategoryMarquee';
+import { getImageUrl } from '../utils/imageUtils';
 
 /* ─── Inline horizontal card matching the reference design ─── */
 function ListingCard({ biz, index }: { biz: Business; index: number }) {
-  const imageUrl = biz.image?.startsWith('/uploads')
-    ? `${API_URL}${biz.image}`
-    : biz.image || 'https://placehold.co/400x300?text=No+Image';
+  const imageUrl = getImageUrl(biz.image);
 
   const delayClass = `card-delay-${Math.min(index, 19)}`;
 
@@ -148,7 +147,7 @@ export default function Home() {
     const db = banners.find(b => b.slot === slot);
     const hasUpload = db?.image_url && db.image_url.trim() !== '';
     const src = hasUpload
-      ? (db!.image_url!.startsWith('/uploads') ? `${API_URL}${db!.image_url}` : db!.image_url!)
+      ? getImageUrl(db!.image_url)
       : BANNER_FALLBACKS[slot].src;
     return { src, alt: BANNER_FALLBACKS[slot].alt, link: db?.link_url || null };
   });

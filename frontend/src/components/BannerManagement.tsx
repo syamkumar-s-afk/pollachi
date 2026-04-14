@@ -3,6 +3,7 @@ import { Image as ImageIcon, Save, Loader2, Link as LinkIcon, Upload, Trash2 } f
 import { useBanners } from '../hooks/useBanners';
 import { API_URL } from '../constants';
 import { useToast } from './Toast';
+import { getImageUrl } from '../utils/imageUtils';
 
 const SLOT_LABELS: Record<string, string> = {
   banner1: 'Banner 1',
@@ -61,17 +62,11 @@ function BannerSlotForm({ slot, label, fallback, banner, updateBanner, updatingS
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(
-    banner?.image_url
-      ? (banner.image_url.startsWith('/uploads') ? `${API_URL}${banner.image_url}` : banner.image_url)
-      : null
-  );
+  const [preview, setPreview] = useState<string | null>(getImageUrl(banner?.image_url, label));
   const [linkUrl, setLinkUrl] = useState(banner?.link_url || '');
 
   // Update local state if banner data changes (after refresh)
-  const currentImageUrl = banner?.image_url
-    ? (banner.image_url.startsWith('/uploads') ? `${API_URL}${banner.image_url}` : banner.image_url)
-    : null;
+  const currentImageUrl = getImageUrl(banner?.image_url, label);
 
   const displayImage = preview || currentImageUrl || fallback;
   const isUploading = updatingSlot === slot;

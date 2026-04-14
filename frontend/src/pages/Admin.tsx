@@ -20,6 +20,7 @@ import { isTokenExpired } from '../components/ProtectedRoute';
 import { CITIES, API_URL } from '../constants';
 import { useCategories } from '../hooks/useCategories';
 import type { Business } from '../types';
+import { getImageUrl } from '../utils/imageUtils';
 import {
   loginAdmin,
   saveBusiness,
@@ -638,11 +639,7 @@ export default function Admin() {
                     >
                       <div className="w-12 h-12 rounded-lg bg-gray-200 overflow-hidden flex-shrink-0">
                         <img
-                          src={
-                            b.image?.startsWith('/uploads')
-                              ? `${API_URL}${b.image}`
-                              : b.image || 'https://placehold.co/100x100?text=N/A'
-                          }
+                          src={getImageUrl(b.image, 'N/A')}
                           alt=""
                           className="w-full h-full object-cover"
                           loading="lazy"

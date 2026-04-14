@@ -3,6 +3,7 @@ import { Link as LinkIcon, Save, Image as ImageIcon, Loader2 } from 'lucide-reac
 import { useToast } from './Toast';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { API_URL } from '../constants';
+import { getImageUrl } from '../utils/imageUtils';
 
 export default function AdvertisementManagement() {
   const { ads, loading, error, updateAd } = useAdvertisements();
@@ -35,7 +36,7 @@ function AdForm({ slot, index, ad, updateAd, updatingSlot, setUpdatingSlot }: an
   const toast = useToast();
   const [linkUrl, setLinkUrl] = useState(ad?.link_url || '');
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(ad?.image_url ? (ad.image_url.startsWith('/uploads') ? `${API_URL}${ad.image_url}` : ad.image_url) : null);
+  const [preview, setPreview] = useState<string | null>(getImageUrl(ad?.image_url, 'Slot ' + index));
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isUpdating = updatingSlot === slot;
@@ -63,6 +64,7 @@ function AdForm({ slot, index, ad, updateAd, updatingSlot, setUpdatingSlot }: an
       }
 
       await updateAd(slot, formData);
+      setFile(null); // Clear local file after successful upload
       toast.success('Success', `Advertisement slot ${index} updated successfully`);
     } catch (err: any) {
       toast.error('Failed', err.message || 'Failed to update advertisement');

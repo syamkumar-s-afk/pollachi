@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Phone, Smartphone, Mail, MapPin, ExternalLink } from 'lucide-react';
+import { Phone, MessageCircle, MapPin, ExternalLink } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -7,16 +7,16 @@ export default function Footer() {
   return (
     <footer className="bg-[var(--color-secondary)] text-gray-300 w-full" role="contentinfo">
       {/* Main footer content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 md:gap-10">
           {/* About */}
-          <div>
-            <div className="flex items-center gap-2 mb-6">
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2 mb-3">
               <div className="w-8 h-8 bg-[var(--color-primary)] rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                SP
+                KN
               </div>
               <span className="font-bold text-xl text-white tracking-tight">
-                Spot<span className="text-[var(--color-primary)]">News</span>
+                Kodumudi<span className="text-[var(--color-primary)]">News</span>
               </span>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-5">
@@ -31,10 +31,10 @@ export default function Footer() {
 
           {/* Quick Links */}
           <nav aria-label="Quick links">
-            <h3 className="text-white text-sm font-bold mb-5 tracking-wider uppercase">
+            <h3 className="text-white text-sm font-bold mb-3 tracking-wider uppercase">
               Quick Links
             </h3>
-            <ul className="space-y-3 text-sm text-gray-400">
+            <ul className="space-y-1 text-sm text-gray-400">
               <li>
                 <Link
                   to="/"
@@ -67,10 +67,10 @@ export default function Footer() {
 
           {/* Policy */}
           <nav aria-label="Legal and policy links">
-            <h3 className="text-white text-sm font-bold mb-5 tracking-wider uppercase">
+            <h3 className="text-white text-sm font-bold mb-3 tracking-wider uppercase">
               Policy
             </h3>
-            <ul className="space-y-3 text-sm text-gray-400">
+            <ul className="space-y-1 text-sm text-gray-400">
               <li>
                 <span className="hover:text-white transition-colors flex items-center gap-2 cursor-default">
                   Terms of Use
@@ -100,13 +100,13 @@ export default function Footer() {
           </nav>
 
           {/* Customer Care */}
-          <div>
-            <h3 className="text-white text-sm font-bold mb-5 tracking-wider uppercase">
+          <div className="col-span-2 md:col-span-1">
+            <h3 className="text-white text-sm font-bold mb-3 tracking-wider uppercase">
               Customer Care
             </h3>
-            <div className="space-y-4 text-sm">
+            <div className="space-y-2 text-sm">
               <a
-                href="tel:04224350451"
+                href="tel:9843375743"
                 className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors group"
               >
                 <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
@@ -114,39 +114,38 @@ export default function Footer() {
                 </div>
                 <div>
                   <span className="font-medium text-white block">
-                    0422 4350451
+                    9843375743
                   </span>
-                  <span className="text-xs text-gray-500">Landline</span>
+                  <span className="text-xs text-gray-500">Call</span>
                 </div>
               </a>
               <a
-                href="tel:9003854123"
+                href="https://wa.me/9952573997"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors group"
               >
                 <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                  <Smartphone className="w-4 h-4" />
+                  <MessageCircle className="w-4 h-4" />
                 </div>
                 <div>
                   <span className="font-medium text-white block">
-                    90038 54123
+                    9952573997
                   </span>
-                  <span className="text-xs text-gray-500">Mobile</span>
+                  <span className="text-xs text-gray-500">WhatsApp</span>
                 </div>
               </a>
-              <a
-                href="mailto:support@spotnews.com"
-                className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors group"
-              >
+              <div className="flex items-center gap-3 text-gray-400 group">
                 <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                  <Mail className="w-4 h-4" />
+                  <MapPin className="w-4 h-4" />
                 </div>
                 <div>
                   <span className="font-medium text-white block">
-                    support@spotnews.com
+                    Market Road, Kodumudi
                   </span>
-                  <span className="text-xs text-gray-500">Email</span>
+                  <span className="text-xs text-gray-500">Location</span>
                 </div>
-              </a>
+              </div>
             </div>
           </div>
         </div>
@@ -154,9 +153,9 @@ export default function Footer() {
 
       {/* Copyright Bar */}
       <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-gray-500">
-            © {currentYear} SpotNews. All rights reserved.
+            © {currentYear} KodumudiNews. All rights reserved.
           </p>
           <p className="text-xs text-gray-600">
             Made with ❤️ in Tamil Nadu

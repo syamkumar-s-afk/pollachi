@@ -62,8 +62,16 @@ export default function Header() {
             </Link>
           </nav>
 
-          {/* Mobile Menu Toggle */}
-          <div className="flex lg:hidden items-center">
+          {/* Mobile Add Business Button + Menu Toggle */}
+          <div className="flex lg:hidden items-center gap-2">
+            <Link
+              to="/add-business"
+              className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 hover:-translate-y-0.5 hover:shadow-md whitespace-nowrap"
+              aria-label="Add Business"
+            >
+              <PlusCircle className="w-4 h-4 flex-shrink-0" />
+              <span>Add Business</span>
+            </Link>
             <button
               className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -103,15 +111,6 @@ export default function Header() {
                 {tab.name}
               </Link>
             ))}
-            <div className="pt-2 mt-2 border-t border-[var(--color-border-light)]">
-              <Link
-                to="/add-business"
-                onClick={() => setIsMenuOpen(false)}
-                className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-4 py-3 rounded-xl text-base font-bold shadow-sm transition-all flex items-center justify-center gap-2 w-full mt-2"
-              >
-                <PlusCircle className="w-5 h-5" /> Add Business
-              </Link>
-            </div>
           </div>
         </nav>
       )}

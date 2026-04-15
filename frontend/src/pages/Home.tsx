@@ -29,10 +29,10 @@ function ListingCard({ biz, index }: { biz: Business; index: number }) {
 
   return (
     <div
-      className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-2 flex flex-row gap-2 hover:shadow-md transition-all duration-300 group`}
+      className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-4 flex flex-row gap-4 hover:shadow-md transition-all duration-300 group`}
     >
       {/* Thumbnail */}
-      <div className="w-[80px] h-[75px] md:w-[90px] md:h-[85px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100">
+      <div className="w-[88px] h-[100px] md:w-[98px] md:h-[103px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100">
         <img
           src={imageUrl}
           alt={biz.name}
@@ -47,32 +47,32 @@ function ListingCard({ biz, index }: { biz: Business; index: number }) {
       {/* Content */}
       <div className="flex flex-col flex-grow min-w-0">
         <div className="flex justify-between items-start gap-2">
-          <h3 className="text-[15px] font-bold text-[var(--color-primary)] m-0 line-clamp-1 leading-tight">
+          <h3 className="text-[18px] font-bold text-[var(--color-primary)] m-0 line-clamp-1 leading-tight">
             {biz.name}
           </h3>
-          <span className="text-[10px] text-[var(--color-text-muted)] font-bold flex-shrink-0 tracking-wider pt-0.5">
+          <span className="text-[13px] text-[var(--color-text-muted)] font-bold flex-shrink-0 tracking-wider pt-0.5">
             {biz.adId || '#AdSR001'}
           </span>
         </div>
 
-        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-[var(--color-text-secondary)]">
+        <div className="mt-0.5 flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
           <BookOpen className="w-3 h-3 flex-shrink-0 text-[var(--color-text-muted)]" />
           <span className="line-clamp-1 font-medium">
             {biz.category}, {biz.sub_category}
           </span>
         </div>
 
-        <div className="mt-0.5 flex items-start gap-1.5 text-[10px] text-[var(--color-text-secondary)]">
+        <div className="mt-0.5 flex items-start gap-2 text-[13px] text-[var(--color-text-secondary)]">
           <MapPin className="w-3 h-3 flex-shrink-0 text-[var(--color-text-muted)] mt-[1px]" />
           <span className="line-clamp-2 leading-tight font-medium">
             {biz.address}, {biz.city}
           </span>
         </div>
 
-        <div className="mt-auto pt-1.5 flex flex-wrap items-center gap-1.5">
+        <div className="mt-auto pt-0.5 flex flex-wrap items-center gap-1.5">
           <a
             href={`tel:${biz.phone}`}
-            className="inline-flex items-center gap-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[10px] font-bold py-1 px-3 transition-colors"
+            className="inline-flex items-center gap-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[13px] font-bold py-1 px-3 transition-colors"
             aria-label={`Call ${biz.name}`}
           >
             <Phone className="w-3 h-3" />
@@ -82,18 +82,18 @@ function ListingCard({ biz, index }: { biz: Business; index: number }) {
             href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-hover)] text-white text-[10px] font-bold py-1 px-3 transition-colors"
+            className="inline-flex items-center gap-1 bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-hover)] text-white text-[13px] font-bold py-1 px-3 transition-colors"
             aria-label={`WhatsApp ${biz.name}`}
           >
             <MessageCircle className="w-3 h-3" />
             Whatsapp
           </a>
           <button
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer ml-1"
+            className="inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer ml-1"
             aria-label={`Share ${biz.name}`}
           >
             <Share2 className="w-3 h-3" />
-            Share
+            
           </button>
         </div>
       </div>
@@ -227,7 +227,7 @@ export default function Home() {
       {/* ─── Banner Carousel ─── */}
       <div
         ref={bannerRef}
-        className={`w-full rounded-lg overflow-hidden shadow-sm mt-0 mb-3 relative group select-none ${
+        className={`w-full rounded-lg overflow-hidden shadow-sm mt-0 mb-1.5 relative group select-none ${
           bannerDragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
         onMouseDown={handleBannerMouseDown}
@@ -245,7 +245,7 @@ export default function Home() {
                 <img
                   src={img.src}
                   alt={img.alt}
-                  className="w-full h-[120px] md:h-[150px] object-cover"
+                  className="w-full h-[120px] md:h-[300px] object-cover"
                   draggable={false}
                 />
               </a>
@@ -254,7 +254,7 @@ export default function Home() {
                 key={i}
                 src={img.src}
                 alt={img.alt}
-                className="w-full h-[120px] md:h-[150px] object-cover flex-shrink-0"
+                className="w-full h-[120px] md:h-[300px] object-cover flex-shrink-0"
                 draggable={false}
               />
             )
@@ -298,12 +298,10 @@ export default function Home() {
       <CategoryMarquee />
 
       {/* ─── Search / Filter Section (matching reference) ─── */}
-      <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-3">
+      <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-1.5">
         {/* Left: Title */}
         <div className="flex-shrink-0">
-          <p className="text-[var(--color-primary)] text-[10px] font-bold uppercase tracking-wide mb-0.5">
-            Popular Businesses
-          </p>
+
           <h1 className="text-lg md:text-xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-tight">
             Explore Business Around Me
           </h1>
@@ -313,7 +311,7 @@ export default function Home() {
         </div>
 
         {/* Right: Filters inline */}
-        <div className="flex flex-row w-full sm:w-auto gap-1.5 sm:gap-2 flex-grow overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex flex-row w-full sm:w-auto gap-1.5 sm:gap-2 md:max-w-3xl overflow-x-auto pb-1 sm:pb-0">
           <div className="flex-1 min-w-[80px]">
             <label htmlFor="hero-city" className="sr-only">Select district</label>
             <select
@@ -445,7 +443,7 @@ export default function Home() {
 
           {/* Business Cards — horizontal list layout with ad in 2nd slot */}
           {!loading && !error && businesses.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {businesses.map((biz, index) => {
                 const items = [];
 
@@ -518,7 +516,7 @@ export default function Home() {
         </div>
 
         {/* Sidebar — 3 Ad Slots */}
-        <div className="hidden md:flex flex-col gap-2">
+        <div className="hidden md:flex flex-col gap-2 md:-mt-11">
           {['ad1', 'ad2', 'ad3'].map((slot, idx) => {
             const adData = ads.find(a => a.slot === slot);
             const hasImage = adData?.image_url && adData.image_url.trim() !== '';

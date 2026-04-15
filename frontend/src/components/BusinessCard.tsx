@@ -34,7 +34,7 @@ export default function BusinessCard({
   const handleShare = async () => {
     const shareData = {
       title: biz.name,
-      text: `Check out ${biz.name} in ${biz.city} on SpotNews!`,
+      text: `Check out ${biz.name} in ${biz.city} on KodumudiNews!`,
       url: window.location.href,
     };
 
@@ -58,11 +58,11 @@ export default function BusinessCard({
   if (variant === 'list') {
     return (
       <article
-        className={`card-animate ${delayClass} bg-white rounded-xl overflow-hidden shadow-sm border border-[var(--color-border)] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group flex flex-row gap-0`}
+        className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-4 flex flex-row gap-4 hover:shadow-md transition-all duration-300 group`}
         aria-label={`${biz.name} — ${biz.category}`}
       >
         {/* Image */}
-        <div className="w-[120px] h-auto min-h-[130px] bg-gray-100 relative overflow-hidden flex-shrink-0">
+        <div className="w-[88px] h-[93px] md:w-[98px] md:h-[103px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100">
           <img
             src={imageUrl}
             alt={`${biz.name} storefront`}
@@ -73,69 +73,68 @@ export default function BusinessCard({
                 'https://placehold.co/400x300?text=No+Image';
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/5" />
         </div>
 
         {/* Content */}
-        <div className="flex flex-col flex-grow p-3.5 min-w-0">
+        <div className="flex flex-col flex-grow min-w-0">
           <div className="flex justify-between items-start gap-2">
-            <h3 className="text-[15px] font-bold text-[var(--color-primary)] m-0 line-clamp-1 leading-tight">
+            <h3 className="text-[18px] font-bold text-[var(--color-primary)] m-0 line-clamp-1 leading-tight">
               {biz.name}
             </h3>
-            <span className="text-[10px] text-[var(--color-text-muted)] font-bold flex-shrink-0 tracking-wider pt-0.5">
+            <span className="text-[13px] text-[var(--color-text-muted)] font-bold flex-shrink-0 tracking-wider pt-0.5">
               {biz.adId || '#AdSR001'}
             </span>
           </div>
 
-          <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[var(--color-text-secondary)]">
-            <BookOpen className="w-3.5 h-3.5 flex-shrink-0 text-[var(--color-text-muted)]" />
+          <div className="mt-0.5 flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
+            <BookOpen className="w-3 h-3 flex-shrink-0 text-[var(--color-text-muted)]" />
             <span className="line-clamp-1 font-medium">
-              {biz.category} · {biz.sub_category}
+              {biz.category}, {biz.sub_category}
             </span>
           </div>
 
-          <div className="mt-1 flex items-start gap-1.5 text-[11px] text-[var(--color-text-secondary)]">
-            <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-[var(--color-text-muted)] mt-[1px]" />
-            <span className="line-clamp-2 leading-snug font-medium">
+          <div className="mt-0.5 flex items-start gap-2 text-[13px] text-[var(--color-text-secondary)]">
+            <MapPin className="w-3 h-3 flex-shrink-0 text-[var(--color-text-muted)] mt-[1px]" />
+            <span className="line-clamp-2 leading-tight font-medium">
               {biz.address}, {biz.city}
             </span>
           </div>
 
-          <div className="mt-auto pt-2.5 flex flex-wrap gap-2 items-center">
+          <div className="mt-auto pt-0.5 flex flex-wrap items-center gap-1.5">
             <a
               href={`tel:${biz.phone}`}
-              className="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[11px] font-bold py-1.5 px-4 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[13px] font-bold py-1 px-3 transition-colors"
               aria-label={`Call ${biz.name}`}
             >
               <Phone className="w-3 h-3" />
-              Call
+              Mobile
             </a>
             <a
               href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-hover)] text-white text-[11px] font-bold py-1.5 px-4 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1 bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-hover)] text-white text-[13px] font-bold py-1 px-3 transition-colors"
               aria-label={`WhatsApp ${biz.name}`}
             >
               <MessageCircle className="w-3 h-3" />
-              WhatsApp
+              Whatsapp
             </a>
             <button
               onClick={handleShare}
-              className={`inline-flex items-center gap-1.5 text-[12px] font-bold py-1 px-2 rounded-lg transition-colors cursor-pointer ${
+              className={`inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer ml-1 transition-colors ${
                 copied
                   ? 'text-emerald-600'
-                  : 'text-[var(--color-text-primary)] hover:text-[var(--color-text-secondary)] hover:bg-gray-50'
+                  : ''
               }`}
               aria-label={copied ? 'Link copied' : `Share ${biz.name}`}
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5" /> Copied!
+                  <Check className="w-3 h-3" /> Copied!
                 </>
               ) : (
                 <>
-                  <Share2 className="w-3.5 h-3.5" /> Share
+                  <Share2 className="w-3 h-3" /> Share
                 </>
               )}
             </button>

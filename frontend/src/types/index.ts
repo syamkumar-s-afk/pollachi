@@ -1,5 +1,5 @@
 /**
- * Shared TypeScript interfaces for the SpotNews application.
+ * Shared TypeScript interfaces for the KodumudiNews application.
  */
 
 export interface Business {

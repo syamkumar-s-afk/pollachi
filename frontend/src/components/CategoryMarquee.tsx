@@ -152,7 +152,7 @@ export default function CategoryMarquee() {
   };
 
   return (
-    <div className="relative mb-3 sm:mb-5">
+    <div className="relative mb-1 sm:mb-2">
       {/* Left / Right edge fade masks */}
       <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-r from-[var(--color-background-gray)] to-transparent" />
       <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-[var(--color-background-gray)] to-transparent" />

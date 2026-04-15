@@ -5,14 +5,16 @@ import {
   ChevronRight,
   RefreshCw,
   AlertCircle,
-  Megaphone,
-  Search,
+  ImagePlus,
+  X,
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useBusinesses } from '../hooks/useBusinesses';
-import { CITIES } from '../constants';
+import { CITIES, API_URL } from '../constants';
 import { useCategories } from '../hooks/useCategories';
+import { useAdvertisements } from '../hooks/useAdvertisements';
 import BusinessCard from '../components/BusinessCard';
+import CategoryMarquee from '../components/CategoryMarquee';
 
 export default function Listings() {
   const location = useLocation();
@@ -49,6 +51,8 @@ export default function Listings() {
     retry,
     listingsRef,
   } = useBusinesses({ city, category, subCategory });
+
+  const { ads } = useAdvertisements();
 
   // Keep state in sync if URL changes
   useEffect(() => {
@@ -103,16 +107,17 @@ export default function Listings() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0 pb-6">
+      {/* ─── Category Marquee ─── */}
+      <CategoryMarquee />
+
       {/* ─── Search / Filter Section (matching Home layout) ─── */}
-      <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-3">
+      <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-1.5">
         {/* Left: Title */}
         <div className="flex-shrink-0">
-          <p className="text-[var(--color-primary)] text-[10px] font-bold uppercase tracking-wide mb-0.5">
-            Directory
-          </p>
+
           <h1 className="text-lg md:text-xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-tight">
-            Business Listings
+            {category ? `${category} Listings` : 'Business Listings'}
           </h1>
           <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
             Filter and find the best local businesses across Tamil Nadu.
@@ -120,7 +125,7 @@ export default function Listings() {
         </div>
 
         {/* Right: Filters inline */}
-        <div className="flex flex-row w-full sm:w-auto gap-1.5 sm:gap-2 flex-grow overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex flex-row w-full sm:w-auto gap-1.5 sm:gap-2 md:max-w-3xl overflow-x-auto pb-1 sm:pb-0">
           <div className="flex-1 min-w-[80px]">
             <label htmlFor="filter-city" className="sr-only">Select district</label>
             <select
@@ -173,26 +178,20 @@ export default function Listings() {
           {activeFilterCount > 0 && (
             <button
               onClick={clearFilters}
-              className="bg-gray-100 hover:bg-gray-200 text-[var(--color-text-secondary)] p-2 px-3 sm:p-2.5 sm:px-4 flex items-center justify-center shrink-0 transition-colors cursor-pointer text-xs font-semibold rounded-none"
-              aria-label="Clear filters"
+              className="p-2 sm:p-2.5 flex items-center justify-center bg-white hover:bg-red-50 text-[var(--color-text-muted)] hover:text-red-600 border border-[var(--color-border)] hover:border-red-300 transition-colors cursor-pointer flex-shrink-0"
+              aria-label="Clear all filters"
+              title="Clear all filters"
             >
-              Clear
+              <X className="w-5 h-5" />
             </button>
           )}
-          <button
-            onClick={() => fetchPage(1)}
-            className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white p-2 px-3 sm:p-2.5 sm:px-4 flex items-center justify-center shrink-0 transition-colors cursor-pointer rounded-r-none sm:rounded-none"
-            aria-label="Search businesses"
-          >
-            <Search className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
         </div>
       </div>
 
       {/* ─── Main Content Area ─── */}
-      <div ref={listingsRef} className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div ref={listingsRef} className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {/* Listings */}
-        <div className="lg:col-span-3" aria-live="polite">
+        <div className="md:col-span-3" aria-live="polite">
           {/* Results count */}
           {!loading && !error && totalItems > 0 && (
             <p className="text-xs text-[var(--color-text-muted)] mb-3">
@@ -262,7 +261,7 @@ export default function Listings() {
           )}
 
           {!loading && !error && businesses.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {businesses.map((biz, index) => (
                 <BusinessCard
                   key={biz.id}
@@ -324,21 +323,40 @@ export default function Listings() {
         </div>
 
         {/* Sidebar */}
-        <div className="hidden lg:flex flex-col gap-4">
-          <div className="bg-white border border-[var(--color-border)] rounded-xl overflow-hidden shadow-sm">
-            <div className="bg-gradient-to-r from-[var(--color-primary)] to-red-500 text-white text-[10px] font-bold py-1.5 text-center uppercase tracking-wider">
-              Advertisement
-            </div>
-            <div className="h-[550px] flex flex-col items-center justify-center text-[var(--color-text-muted)] text-sm bg-gradient-to-b from-gray-50 to-white p-6">
-              <Megaphone className="w-10 h-10 mb-3 text-gray-300" />
-              <p className="font-semibold text-[var(--color-text-secondary)] mb-1">
-                Advertise Here
-              </p>
-              <p className="text-xs text-center leading-relaxed">
-                Reach thousands of local customers. Contact us for rates.
-              </p>
-            </div>
-          </div>
+        <div className="hidden md:flex flex-col gap-2 md:-mt-11">
+          {['listing-ad1', 'listing-ad2', 'listing-ad3'].map((slot, idx) => {
+            const adData = ads.find(a => a.slot === slot);
+            const hasImage = adData?.image_url && adData.image_url.trim() !== '';
+            const displayUrl = hasImage && adData?.image_url ? (adData.image_url.startsWith('/uploads') ? `${API_URL}${adData.image_url}` : adData.image_url) : null;
+
+            return (
+              <div
+                key={slot}
+                className="bg-white border border-[var(--color-border)] overflow-hidden shadow-sm rounded-lg"
+              >
+                <div className="bg-gradient-to-r from-[var(--color-primary)] to-red-500 text-white text-[10px] font-bold py-1 text-center uppercase tracking-wider relative z-10">
+                  Advertisement {idx + 1}
+                </div>
+                {displayUrl ? (
+                  <a href={adData?.link_url || '#'} target="_blank" rel="noopener noreferrer" className="block h-[130px] w-full bg-gray-100">
+                    <img src={displayUrl} alt={`Advertisement ${idx + 1}`} className="w-full h-full object-cover" />
+                  </a>
+                ) : (
+                  <div className="h-[130px] flex flex-col items-center justify-center text-[var(--color-text-muted)] text-sm bg-gradient-to-b from-gray-50 to-white p-3 group hover:bg-gray-50 transition-colors">
+                    <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mb-2.5 transition-colors">
+                      <ImagePlus className="w-5 h-5 text-gray-400 group-hover:text-[var(--color-primary)] transition-colors" />
+                    </div>
+                    <p className="font-semibold text-[var(--color-text-secondary)] text-xs mb-0.5">
+                      Ad Space {idx + 1}
+                    </p>
+                    <p className="text-[11px] text-center leading-relaxed text-[var(--color-text-muted)]">
+                      Available for advertisement
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

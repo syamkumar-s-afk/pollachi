@@ -6,9 +6,19 @@ interface AdminLayoutProps {
   children: ReactNode;
   activeSection: 'businesses' | 'categories' | 'advertisements' | 'banners';
   onSectionChange: (section: 'businesses' | 'categories' | 'advertisements' | 'banners') => void;
+  businessesCount?: number;
+  categoriesCount?: number;
+  onLogout?: () => void;
 }
 
-export default function AdminLayout({ children, activeSection, onSectionChange }: AdminLayoutProps) {
+export default function AdminLayout({
+  children,
+  activeSection,
+  onSectionChange,
+  businessesCount = 0,
+  categoriesCount = 0,
+  onLogout,
+}: AdminLayoutProps) {
   const { isCollapsed, toggle, isMobile } = useSidebarNav();
 
   return (
@@ -33,6 +43,9 @@ export default function AdminLayout({ children, activeSection, onSectionChange }
           isCollapsed={isCollapsed}
           onToggle={toggle}
           isMobile={isMobile}
+          businessesCount={businessesCount}
+          categoriesCount={categoriesCount}
+          onLogout={onLogout}
         />
 
         {/* Main Content */}

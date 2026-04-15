@@ -12,11 +12,12 @@ export default function AdvertisementManagement() {
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-6xl">
+      {/* Homepage Advertisements Section */}
       <div className="bg-white p-6 rounded-xl border border-[var(--color-border)] shadow-sm">
-        <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-2 tracking-tight">Advertisement Spaces</h2>
+        <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-2 tracking-tight">Homepage Advertisements</h2>
         <p className="text-sm text-[var(--color-text-muted)] mb-8 pb-4 border-b border-[var(--color-border)]">
-          Upload banner images and set target links for the advertisement slots across the homepage. 
+          Upload banner images and set target links for the advertisement slots on the homepage.
           The 'inline-ad' will be displayed inline with the business listings.
         </p>
 
@@ -27,11 +28,27 @@ export default function AdvertisementManagement() {
           })}
         </div>
       </div>
+
+      {/* Listing Page Advertisements Section */}
+      <div className="bg-white p-6 rounded-xl border border-[var(--color-border)] shadow-sm">
+        <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-2 tracking-tight">Listing Page Advertisements</h2>
+        <p className="text-sm text-[var(--color-text-muted)] mb-8 pb-4 border-b border-[var(--color-border)]">
+          Upload banner images and set target links for the advertisement slots on the business listings page.
+          These three advertisement spaces appear in the sidebar on the listings page.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {['listing-ad1', 'listing-ad2', 'listing-ad3'].map((slot, index) => {
+            const ad = ads.find(a => a.slot === slot);
+            return <AdForm key={slot} slot={slot} index={index + 1} ad={ad} updateAd={updateAd} updatingSlot={updatingSlot} setUpdatingSlot={setUpdatingSlot} isListingAd={true} />;
+          })}
+        </div>
+      </div>
     </div>
   );
 }
 
-function AdForm({ slot, index, ad, updateAd, updatingSlot, setUpdatingSlot }: any) {
+function AdForm({ slot, index, ad, updateAd, updatingSlot, setUpdatingSlot, isListingAd = false }: any) {
   const toast = useToast();
   const [linkUrl, setLinkUrl] = useState(ad?.link_url || '');
   const [file, setFile] = useState<File | null>(null);
@@ -81,7 +98,7 @@ function AdForm({ slot, index, ad, updateAd, updatingSlot, setUpdatingSlot }: an
   return (
     <div className="border border-[var(--color-border)] rounded-xl p-5 bg-gray-50 flex flex-col h-full shadow-sm hover:shadow transition-shadow">
       <div className="font-bold text-[15px] mb-5 flex items-center justify-between text-[var(--color-text-primary)]">
-        <span className="truncate pr-2">{slot === 'inline-ad' ? 'Inline Ad' : `Slot ${index}`}</span>
+        <span className="truncate pr-2">{slot === 'inline-ad' ? 'Inline Ad' : `${isListingAd ? 'Listing ' : ''}Slot ${index}`}</span>
         <span className="text-[10px] uppercase bg-gray-200 px-2.5 py-1 rounded-md font-bold text-gray-500 tracking-wider items-center flex-shrink-0 block">{slot}</span>
       </div>
 

@@ -36,6 +36,10 @@ export function useAdvertisements() {
   const updateAd = async (slot: string, formData: FormData): Promise<void> => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('You must be logged in to update advertisements.');
+      }
+
       const res = await fetch(`${API_URL}/api/advertisements/${slot}`, {
         method: 'PUT',
         headers: {
@@ -43,12 +47,17 @@ export function useAdvertisements() {
         },
         body: formData
       });
+
       if (!res.ok) {
         const json = await res.json().catch(() => ({}));
-        throw new Error(json.error || 'Failed to update advertisement');
+        if (res.status === 401) {
+          throw new Error('Unauthorized: Your session may have expired. Please log in again.');
+        }
+        throw new Error(json.error || `Failed to update advertisement (Status: ${res.status})`);
       }
       await fetchAds();
     } catch (err: any) {
+      console.error('Advertisement update failed:', err);
       throw err;
     }
   };

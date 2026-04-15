@@ -68,19 +68,19 @@ export default function AddBusiness() {
 
   if (submitted) {
     return (
-      <div className="max-w-md mx-auto mt-8 md:mt-16 add-biz-fade-in">
-        <div className="bg-white p-8 md:p-10 rounded-2xl shadow-lg border border-[var(--color-border)] text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg add-biz-bounce">
-            <MessageCircle className="w-9 h-9 text-white" />
+      <div className="max-w-md mx-auto mt-4 md:mt-8 add-biz-fade-in">
+        <div className="bg-white p-5 md:p-6 rounded-2xl shadow-lg border border-[var(--color-border)] text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg add-biz-bounce">
+            <MessageCircle className="w-7 h-7 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-2">
+          <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-1.5">
             Request Sent! 🎉
           </h2>
-          <p className="text-sm text-[var(--color-text-muted)] mb-6 leading-relaxed">
+          <p className="text-xs text-[var(--color-text-muted)] mb-4 leading-relaxed">
             Your business listing request is being opened in WhatsApp.
             Our team will review and get back to you shortly.
           </p>
-          <div className="space-y-3">
+          <div className="space-y-2">
             <button
               onClick={() => {
                 setSubmitted(false);
@@ -90,13 +90,13 @@ export default function AddBusiness() {
                 setContactNumber('');
                 setErrors({});
               }}
-              className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white py-3 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md cursor-pointer"
+              className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white py-2.5 rounded-xl font-bold text-xs transition-all shadow-sm hover:shadow-md cursor-pointer"
             >
               Submit Another Request
             </button>
             <Link
               to="/"
-              className="block w-full bg-gray-100 hover:bg-gray-200 text-[var(--color-text-secondary)] py-3 rounded-xl font-semibold text-sm transition-colors text-center"
+              className="block w-full bg-gray-100 hover:bg-gray-200 text-[var(--color-text-secondary)] py-2.5 rounded-xl font-semibold text-xs transition-colors text-center"
             >
               Back to Home
             </Link>
@@ -107,28 +107,11 @@ export default function AddBusiness() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-6 md:mt-12 pb-8 add-biz-fade-in">
-      {/* Admin Profile Icon — links to admin login */}
-      <div className="flex justify-end mb-4">
-        <Link
-          to="/admin"
-          className="group relative flex items-center gap-2 bg-white hover:bg-gray-50 border border-[var(--color-border)] hover:border-[var(--color-primary)] rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-all duration-300"
-          aria-label="Admin Login"
-          id="admin-profile-link"
-        >
-          <div className="w-8 h-8 bg-gradient-to-br from-[var(--color-primary)] to-red-700 rounded-full flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300">
-            <ShieldCheck className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-xs font-bold text-[var(--color-text-secondary)] group-hover:text-[var(--color-primary)] transition-colors">
-            Admin
-          </span>
-        </Link>
-      </div>
-
-      {/* Main Card */}
-      <div className="bg-white rounded-2xl shadow-lg border border-[var(--color-border)] overflow-hidden">
+    <div className="w-full mx-auto mt-3 md:mt-6 pb-4 add-biz-fade-in">
+      {/* Main Card - Full width with responsive max-width */}
+      <div className="bg-white rounded-2xl shadow-lg border border-[var(--color-border)] overflow-hidden mx-4 md:mx-auto md:max-w-5xl">
         {/* Header Section */}
-        <div className="bg-gradient-to-br from-[var(--color-primary)] via-red-600 to-red-800 p-6 md:p-8 text-center relative overflow-hidden">
+        <div className="bg-gradient-to-br from-[var(--color-primary)] via-red-600 to-red-800 p-5 md:p-6 text-center relative overflow-hidden">
           {/* Decorative elements */}
           <div className="absolute top-0 left-0 w-full h-full opacity-10">
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-white rounded-full" />
@@ -136,157 +119,162 @@ export default function AddBusiness() {
           </div>
 
           <div className="relative z-10">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-white/20 add-biz-float">
-              <Building2 className="w-8 h-8 text-white" />
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-2.5 shadow-lg border border-white/20 add-biz-float">
+              <Building2 className="w-7 h-7 text-white" />
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1.5 tracking-tight">
+            <h1 className="text-xl md:text-2xl font-bold text-white mb-1 tracking-tight">
               Add Your Business
             </h1>
-            <p className="text-red-100 text-sm flex items-center justify-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
+            <p className="text-red-100 text-xs flex items-center justify-center gap-1">
+              <Sparkles className="w-3 h-3" />
               Get listed on Kodumudi News today
             </p>
           </div>
         </div>
 
         {/* Form Section */}
-        <div className="p-6 md:p-8">
-          <p className="text-sm text-[var(--color-text-muted)] mb-6 text-center leading-relaxed">
+        <div className="p-5 md:p-6">
+          <p className="text-xs text-[var(--color-text-muted)] mb-5 text-center leading-relaxed">
             Fill in your details below. Our team will contact you
             to complete your business listing.
           </p>
 
-          <form onSubmit={handleSendRequest} className="space-y-5" id="add-business-form">
-            {/* Name */}
-            <div className="add-biz-field-enter" style={{ animationDelay: '0.1s' }}>
-              <label
-                htmlFor="add-biz-name"
-                className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-secondary)] mb-2"
-              >
-                <User className="w-4 h-4 text-[var(--color-primary)]" />
-                Name <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="add-biz-name"
-                type="text"
-                placeholder="e.g. Rajesh Kumar"
-                value={yourName}
-                onChange={(e) => {
-                  setYourName(e.target.value);
-                  if (errors.yourName) {
-                    setErrors((prev) => ({ ...prev, yourName: '' }));
-                  }
-                }}
-                className={inputClass('yourName')}
-              />
-              {errors.yourName && (
-                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                  <span className="w-1 h-1 bg-red-500 rounded-full" />
-                  {errors.yourName}
-                </p>
-              )}
+          <form onSubmit={handleSendRequest} className="space-y-4" id="add-business-form">
+            {/* Form Fields Grid - 2 columns on desktop, 1 on mobile */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Name */}
+              <div className="add-biz-field-enter" style={{ animationDelay: '0.1s' }}>
+                <label
+                  htmlFor="add-biz-name"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-text-secondary)] mb-1.5"
+                >
+                  <User className="w-3.5 h-3.5 text-[var(--color-primary)]" />
+                  Name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="add-biz-name"
+                  type="text"
+                  placeholder="e.g. Rajesh Kumar"
+                  value={yourName}
+                  onChange={(e) => {
+                    setYourName(e.target.value);
+                    if (errors.yourName) {
+                      setErrors((prev) => ({ ...prev, yourName: '' }));
+                    }
+                  }}
+                  className={inputClass('yourName')}
+                />
+                {errors.yourName && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <span className="w-0.5 h-0.5 bg-red-500 rounded-full" />
+                    {errors.yourName}
+                  </p>
+                )}
+              </div>
+
+              {/* City/Location */}
+              <div className="add-biz-field-enter" style={{ animationDelay: '0.2s' }}>
+                <label
+                  htmlFor="add-biz-city"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-text-secondary)] mb-1.5"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-[var(--color-primary)]" />
+                  City/Location <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="add-biz-city"
+                  type="text"
+                  placeholder="e.g. Kodumudi"
+                  value={city}
+                  onChange={(e) => {
+                    setCity(e.target.value);
+                    if (errors.city) {
+                      setErrors((prev) => ({ ...prev, city: '' }));
+                    }
+                  }}
+                  className={inputClass('city')}
+                />
+                {errors.city && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <span className="w-0.5 h-0.5 bg-red-500 rounded-full" />
+                    {errors.city}
+                  </p>
+                )}
+              </div>
+
+              {/* Business (Company Name) */}
+              <div className="add-biz-field-enter" style={{ animationDelay: '0.3s' }}>
+                <label
+                  htmlFor="add-biz-company"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-text-secondary)] mb-1.5"
+                >
+                  <Building2 className="w-3.5 h-3.5 text-[var(--color-primary)]" />
+                  Business <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="add-biz-company"
+                  type="text"
+                  placeholder="e.g. ABC Textiles Pvt Ltd"
+                  value={companyName}
+                  onChange={(e) => {
+                    setCompanyName(e.target.value);
+                    if (errors.companyName) {
+                      setErrors((prev) => ({ ...prev, companyName: '' }));
+                    }
+                  }}
+                  className={inputClass('companyName')}
+                />
+                {errors.companyName && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <span className="w-0.5 h-0.5 bg-red-500 rounded-full" />
+                    {errors.companyName}
+                  </p>
+                )}
+              </div>
+
+              {/* Mobile (Contact Number) */}
+              <div className="add-biz-field-enter" style={{ animationDelay: '0.4s' }}>
+                <label
+                  htmlFor="add-biz-contact"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-text-secondary)] mb-1.5"
+                >
+                  <Phone className="w-3.5 h-3.5 text-[var(--color-primary)]" />
+                  Mobile <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="add-biz-contact"
+                  type="tel"
+                  placeholder="e.g. 9876543210"
+                  value={contactNumber}
+                  onChange={(e) => {
+                    setContactNumber(e.target.value);
+                    if (errors.contactNumber) {
+                      setErrors((prev) => ({ ...prev, contactNumber: '' }));
+                    }
+                  }}
+                  className={inputClass('contactNumber')}
+                />
+                {errors.contactNumber && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <span className="w-0.5 h-0.5 bg-red-500 rounded-full" />
+                    {errors.contactNumber}
+                  </p>
+                )}
+              </div>
             </div>
 
-            {/* City/Location */}
-            <div className="add-biz-field-enter" style={{ animationDelay: '0.2s' }}>
-              <label
-                htmlFor="add-biz-city"
-                className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-secondary)] mb-2"
+            {/* Send Request Button - Centered below inputs */}
+            <div className="flex justify-center pt-2">
+              <button
+                type="submit"
+                id="send-request-btn"
+                className="bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-hover)] text-white px-8 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2 group hover:-translate-y-0.5 active:translate-y-0"
               >
-                <MapPin className="w-4 h-4 text-[var(--color-primary)]" />
-                City/Location <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="add-biz-city"
-                type="text"
-                placeholder="e.g. Kodumudi"
-                value={city}
-                onChange={(e) => {
-                  setCity(e.target.value);
-                  if (errors.city) {
-                    setErrors((prev) => ({ ...prev, city: '' }));
-                  }
-                }}
-                className={inputClass('city')}
-              />
-              {errors.city && (
-                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                  <span className="w-1 h-1 bg-red-500 rounded-full" />
-                  {errors.city}
-                </p>
-              )}
+                <Send className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                Send Request via WhatsApp
+                <MessageCircle className="w-3.5 h-3.5 opacity-60" />
+              </button>
             </div>
-
-            {/* Business (Company Name) */}
-            <div className="add-biz-field-enter" style={{ animationDelay: '0.3s' }}>
-              <label
-                htmlFor="add-biz-company"
-                className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-secondary)] mb-2"
-              >
-                <Building2 className="w-4 h-4 text-[var(--color-primary)]" />
-                Business <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="add-biz-company"
-                type="text"
-                placeholder="e.g. ABC Textiles Pvt Ltd"
-                value={companyName}
-                onChange={(e) => {
-                  setCompanyName(e.target.value);
-                  if (errors.companyName) {
-                    setErrors((prev) => ({ ...prev, companyName: '' }));
-                  }
-                }}
-                className={inputClass('companyName')}
-              />
-              {errors.companyName && (
-                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                  <span className="w-1 h-1 bg-red-500 rounded-full" />
-                  {errors.companyName}
-                </p>
-              )}
-            </div>
-
-            {/* Mobile (Contact Number) */}
-            <div className="add-biz-field-enter" style={{ animationDelay: '0.4s' }}>
-              <label
-                htmlFor="add-biz-contact"
-                className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-secondary)] mb-2"
-              >
-                <Phone className="w-4 h-4 text-[var(--color-primary)]" />
-                Mobile <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="add-biz-contact"
-                type="tel"
-                placeholder="e.g. 9876543210"
-                value={contactNumber}
-                onChange={(e) => {
-                  setContactNumber(e.target.value);
-                  if (errors.contactNumber) {
-                    setErrors((prev) => ({ ...prev, contactNumber: '' }));
-                  }
-                }}
-                className={inputClass('contactNumber')}
-              />
-              {errors.contactNumber && (
-                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                  <span className="w-1 h-1 bg-red-500 rounded-full" />
-                  {errors.contactNumber}
-                </p>
-              )}
-            </div>
-
-            {/* Send Request Button */}
-            <button
-              type="submit"
-              id="send-request-btn"
-              className="w-full bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-hover)] text-white py-3.5 rounded-xl font-bold text-sm transition-all shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2.5 group mt-2 hover:-translate-y-0.5 active:translate-y-0"
-            >
-              <Send className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              Send Request via WhatsApp
-              <MessageCircle className="w-4 h-4 opacity-60" />
-            </button>
           </form>
 
         </div>

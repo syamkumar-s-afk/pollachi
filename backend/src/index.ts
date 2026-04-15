@@ -70,7 +70,7 @@ app.post('/api/login', async (req, res) => {
   const admin = rows[0];
 
   if (admin && await bcrypt.compare(password, admin.password)) {
-    const token = jwt.encode({ id: admin.id, exp: Date.now() + 1000 * 60 * 60 * 24 }, JWT_SECRET);
+    const token = jwt.encode({ id: admin.id, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 }, JWT_SECRET);
     res.json({ token });
   } else {
     res.status(401).json({ error: 'Invalid credentials' });
@@ -83,7 +83,7 @@ const auth = (req: express.Request, res: express.Response, next: express.NextFun
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) throw new Error('No token');
     const decoded = jwt.decode(token, JWT_SECRET);
-    if (decoded.exp < Date.now()) throw new Error('Token expired');
+    if (decoded.exp < Math.floor(Date.now() / 1000)) throw new Error('Token expired');
     next();
   } catch (err) {
     res.status(401).json({ error: 'Unauthorized' });

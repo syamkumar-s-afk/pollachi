@@ -1,4 +1,4 @@
-import { Plus, FolderOpen, Image as ImageIcon, LayoutPanelLeft } from 'lucide-react';
+import { Plus, FolderOpen, Image as ImageIcon, LayoutPanelLeft, LogOut } from 'lucide-react';
 
 interface SidebarNavProps {
   activeSection: 'businesses' | 'categories' | 'advertisements' | 'banners';
@@ -6,6 +6,9 @@ interface SidebarNavProps {
   isCollapsed: boolean;
   onToggle: () => void;
   isMobile: boolean;
+  businessesCount?: number;
+  categoriesCount?: number;
+  onLogout?: () => void;
 }
 
 export default function SidebarNav({
@@ -14,6 +17,9 @@ export default function SidebarNav({
   isCollapsed,
   onToggle,
   isMobile,
+  businessesCount = 0,
+  categoriesCount = 0,
+  onLogout,
 }: SidebarNavProps) {
   const handleNavClick = (section: 'businesses' | 'categories' | 'advertisements' | 'banners') => {
     onSectionChange(section);
@@ -116,6 +122,20 @@ export default function SidebarNav({
             {!isCollapsed && <span>Banners</span>}
           </button>
         </nav>
+
+        {/* Section Info & Logout */}
+        <div className="border-t border-[var(--color-border)] p-3 space-y-3">
+         
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center gap-2 text-xs font-semibold text-[var(--color-text-secondary)] hover:text-red-600 transition-colors px-3 py-2 rounded-xl hover:bg-red-50"
+            >
+              <LogOut className="w-4 h-4 flex-shrink-0" />
+              {!isCollapsed && <span>Sign Out</span>}
+            </button>
+          )}
+        </div>
 
         {/* Toggle Button (Desktop only) */}
         {!isMobile && (

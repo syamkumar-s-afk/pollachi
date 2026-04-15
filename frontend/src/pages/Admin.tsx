@@ -322,8 +322,6 @@ export default function Admin() {
     <AdminLayout
       activeSection={activeSection}
       onSectionChange={setActiveSection}
-      businessesCount={businesses.length}
-      categoriesCount={categories.length}
       onLogout={logout}
     >
       {/* Businesses Section */}

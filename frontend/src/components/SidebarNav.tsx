@@ -6,8 +6,6 @@ interface SidebarNavProps {
   isCollapsed: boolean;
   onToggle: () => void;
   isMobile: boolean;
-  businessesCount?: number;
-  categoriesCount?: number;
   onLogout?: () => void;
 }
 
@@ -17,8 +15,6 @@ export default function SidebarNav({
   isCollapsed,
   onToggle,
   isMobile,
-  businessesCount = 0,
-  categoriesCount = 0,
   onLogout,
 }: SidebarNavProps) {
   const handleNavClick = (section: 'businesses' | 'categories' | 'advertisements' | 'banners') => {

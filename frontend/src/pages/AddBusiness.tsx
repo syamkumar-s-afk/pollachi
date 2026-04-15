@@ -6,7 +6,6 @@ import {
   Phone,
   Send,
   MessageCircle,
-  ShieldCheck,
   Sparkles,
   MapPin,
 } from 'lucide-react';

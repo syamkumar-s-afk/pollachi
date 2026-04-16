@@ -8,7 +8,10 @@ export async function getDb() {
   if (dbInstance) return dbInstance;
 
   dbInstance = new Pool({
-    connectionString: process.env.DATABASE_URL
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false
+    }
   });
 
   await dbInstance.query(`
@@ -156,6 +159,7 @@ export async function getDb() {
         [sb.name, sb.category, sb.sub_category, sb.city, sb.address, sb.phone, sb.whatsapp, sb.image, sb.adId]
       );
     }
+    console.log('[DB] Businesses seeded successfully');
   }
 
   // Seed advertisements robustly

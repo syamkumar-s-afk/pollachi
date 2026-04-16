@@ -77,14 +77,9 @@ export default function BusinessCard({
 
         {/* Content */}
         <div className="flex flex-col flex-grow min-w-0">
-          <div className="flex justify-between items-start gap-2">
-            <h3 className="text-[18px] font-bold text-[var(--color-primary)] m-0 line-clamp-1 leading-tight">
-              {biz.name}
-            </h3>
-            <span className="text-[13px] text-[var(--color-text-muted)] font-bold flex-shrink-0 tracking-wider pt-0.5">
-              {biz.adId || '#AdSR001'}
-            </span>
-          </div>
+          <h3 className="text-[18px] font-bold text-[var(--color-primary)] m-0 line-clamp-1 leading-tight">
+            {biz.name}
+          </h3>
 
           <div className="mt-1 flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
             <BookOpen className="w-3 h-3 flex-shrink-0 text-[var(--color-text-muted)]" />
@@ -164,9 +159,6 @@ export default function BusinessCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[var(--color-primary)] text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
           {biz.category}
-        </span>
-        <span className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-1 rounded-full">
-          {biz.adId || '#AdSR001'}
         </span>
       </div>
 

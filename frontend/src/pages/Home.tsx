@@ -46,14 +46,9 @@ function ListingCard({ biz, index }: { biz: Business; index: number }) {
 
       {/* Content */}
       <div className="flex flex-col flex-grow min-w-0">
-        <div className="flex justify-between items-start gap-2">
-          <h3 className="text-[18px] font-bold text-[var(--color-primary)] m-0 line-clamp-1 leading-tight">
-            {biz.name}
-          </h3>
-          <span className="text-[13px] text-[var(--color-text-muted)] font-bold flex-shrink-0 tracking-wider pt-0.5">
-            {biz.adId || '#AdSR001'}
-          </span>
-        </div>
+        <h3 className="text-[18px] font-bold text-[var(--color-primary)] m-0 line-clamp-1 leading-tight">
+          {biz.name}
+        </h3>
 
         <div className="mt-1 flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
           <BookOpen className="w-3 h-3 flex-shrink-0 text-[var(--color-text-muted)]" />

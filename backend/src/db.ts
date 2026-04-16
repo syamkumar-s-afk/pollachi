@@ -88,32 +88,45 @@ export async function getDb() {
     await dbInstance.query('INSERT INTO admin (username, password) VALUES ($1, $2)', ['admin', hash]);
   }
 
-  // Seed categories if not exists
-  const catRes = await dbInstance.query('SELECT COUNT(*) as cnt FROM categories');
-  if (parseInt(catRes.rows[0].cnt, 10) === 0) {
-    const categoryData = [
-      { name: 'Education', slug: 'education', subcategories: ['School', 'College'] },
-      { name: 'Finance', slug: 'finance', subcategories: [] },
-      { name: 'Food & Beverage', slug: 'food-beverage', subcategories: ['Cafe'] },
-      { name: 'Healthcare', slug: 'healthcare', subcategories: ['Hospital', 'Clinic', 'Pharmacy'] },
-      { name: 'Real Estate', slug: 'real-estate', subcategories: [] },
-      { name: 'Retail', slug: 'retail', subcategories: ['Supermarket', "Men's Wear", "Women's Wear", 'Electronics'] },
-      { name: 'Services', slug: 'services', subcategories: ['Hotels'] },
-      { name: 'Technology', slug: 'technology', subcategories: [] },
-      { name: 'Travel & Transport', slug: 'travel-transport', subcategories: [] },
-      { name: 'Automotive', slug: 'automotive', subcategories: ['Automotive Repair'] },
-      { name: 'Grocery', slug: 'grocery', subcategories: ['Vegetable, Milk'] },
-      { name: 'Restaurant', slug: 'restaurant', subcategories: ['Veg', 'Non-veg', 'Restaurant'] }
-    ];
+  // Seed categories and subcategories
+  const categoryData = [
+    { name: 'Education', slug: 'education', subcategories: ['School', 'College'] },
+    { name: 'Finance', slug: 'finance', subcategories: [] },
+    { name: 'Food & Beverage', slug: 'food-beverage', subcategories: ['Cafe'] },
+    { name: 'Healthcare', slug: 'healthcare', subcategories: ['Hospital', 'Clinic', 'Pharmacy'] },
+    { name: 'Real Estate', slug: 'real-estate', subcategories: [] },
+    { name: 'Retail', slug: 'retail', subcategories: ['Supermarket', "Men's Wear", "Women's Wear", 'Electronics'] },
+    { name: 'Services', slug: 'services', subcategories: ['Hotels'] },
+    { name: 'Technology', slug: 'technology', subcategories: [] },
+    { name: 'Travel & Transport', slug: 'travel-transport', subcategories: [] },
+    { name: 'Automotive', slug: 'automotive', subcategories: ['Automotive Repair'] },
+    { name: 'Grocery', slug: 'grocery', subcategories: ['Vegetable, Milk'] },
+    { name: 'Restaurant', slug: 'restaurant', subcategories: ['Veg', 'Non-veg', 'Restaurant'] }
+  ];
 
-    for (const cat of categoryData) {
+  for (const cat of categoryData) {
+    // Check if category exists
+    let categoryId: number;
+    const catSearch = await dbInstance.query('SELECT id FROM categories WHERE name = $1', [cat.name]);
+    
+    if (catSearch.rowCount === 0) {
       const catInsert = await dbInstance.query(
         'INSERT INTO categories (name, slug, created_at, updated_at) VALUES ($1, $2, NOW(), NOW()) RETURNING id',
         [cat.name, cat.slug]
       );
-      const categoryId = catInsert.rows[0].id;
+      categoryId = catInsert.rows[0].id;
+    } else {
+      categoryId = catSearch.rows[0].id;
+    }
 
-      for (const subcat of cat.subcategories) {
+    // Seed subcategories for this category if missing
+    for (const subcat of cat.subcategories) {
+      const subSearch = await dbInstance.query(
+        'SELECT id FROM subcategories WHERE category_id = $1 AND name = $2',
+        [categoryId, subcat]
+      );
+      
+      if (subSearch.rowCount === 0) {
         const subcatSlug = subcat.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
         await dbInstance.query(
           'INSERT INTO subcategories (category_id, name, slug, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW())',
@@ -121,8 +134,33 @@ export async function getDb() {
         );
       }
     }
-    console.log('[DB] Categories seeded successfully');
   }
+
+  // Synchronize businesses back to subcategories table if missing (Import custom subcategories)
+  const usedSubcats = await dbInstance.query('SELECT DISTINCT category, sub_category FROM businesses');
+  for (const row of usedSubcats.rows) {
+    const { category: catName, sub_category: subName } = row;
+    if (!subName || !catName) continue;
+
+    const catCheck = await dbInstance.query('SELECT id FROM categories WHERE name = $1', [catName]);
+    if (catCheck.rowCount && catCheck.rowCount > 0) {
+      const categoryId = catCheck.rows[0].id;
+      const subCheck = await dbInstance.query(
+        'SELECT id FROM subcategories WHERE category_id = $1 AND name = $2',
+        [categoryId, subName]
+      );
+      
+      if (subCheck.rowCount === 0) {
+        const subSlug = subName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+        await dbInstance.query(
+          'INSERT INTO subcategories (category_id, name, slug, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW())',
+          [categoryId, subName, subSlug]
+        );
+      }
+    }
+  }
+
+  console.log('[DB] Categories and Subcategories synchronized');
 
   // Insert sample data if no businesses
   const bRes = await dbInstance.query('SELECT COUNT(*) as cnt FROM businesses');

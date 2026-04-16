@@ -203,7 +203,7 @@ app.get('/api/categories', async (req, res) => {
   try {
     const db = await getDb();
     const categoriesResult = await db.query(
-      'SELECT id, name, slug, description, created_at, updated_at FROM categories ORDER BY created_at DESC'
+      'SELECT id, name, slug, description, is_priority, created_at, updated_at FROM categories ORDER BY is_priority DESC, created_at DESC'
     );
 
     const categories = categoriesResult.rows;
@@ -271,7 +271,7 @@ app.put('/api/categories/:id', auth, async (req, res) => {
   try {
     const db = await getDb();
     const { id } = req.params;
-    const { name, description } = req.body;
+    const { name, description, is_priority } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100) {
       return res.status(400).json({
@@ -306,15 +306,42 @@ app.put('/api/categories/:id', auth, async (req, res) => {
     }
 
     const slug = generateSlug(trimmedName);
+    const priorityValue = is_priority === true ? true : false;
 
     await db.query(
-      'UPDATE categories SET name = $1, slug = $2, description = $3, updated_at = NOW() WHERE id = $4',
-      [trimmedName, slug, description || null, id]
+      'UPDATE categories SET name = $1, slug = $2, description = $3, is_priority = $4, updated_at = NOW() WHERE id = $5',
+      [trimmedName, slug, description || null, priorityValue, id]
     );
 
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to update category', code: 'ERROR' });
+  }
+});
+
+// PATCH /api/categories/:id/priority - Toggle category priority (protected)
+app.patch('/api/categories/:id/priority', auth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const { id } = req.params;
+    const { is_priority } = req.body;
+
+    // Check if category exists
+    const categoryCheck = await db.query('SELECT id, is_priority FROM categories WHERE id = $1', [id]);
+    if (!categoryCheck.rowCount || categoryCheck.rowCount === 0) {
+      return res.status(404).json({ error: 'Category not found', code: 'NOT_FOUND' });
+    }
+
+    const priorityValue = is_priority === true ? true : false;
+
+    await db.query(
+      'UPDATE categories SET is_priority = $1, updated_at = NOW() WHERE id = $2',
+      [priorityValue, id]
+    );
+
+    res.json({ success: true, is_priority: priorityValue });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update category priority', code: 'ERROR' });
   }
 });
 

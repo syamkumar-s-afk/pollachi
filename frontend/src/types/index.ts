@@ -41,6 +41,7 @@ export interface Category {
   name: string;
   slug: string;
   description?: string;
+  is_priority?: boolean;
   created_at: string;
   updated_at: string;
   subcategories?: Subcategory[];

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Trash2, Edit2, Plus, Loader2, AlertCircle } from 'lucide-react';
+import { Trash2, Edit2, Plus, Loader2, AlertCircle, Star } from 'lucide-react';
 import { useToast } from './Toast';
 import ConfirmModal from './ConfirmModal';
 import type { Category } from '../types';
 import type { UseCategories } from '../hooks/useCategories';
+import { toggleCategoryPriority } from '../services/api';
 
 interface CategoryManagementProps {
   token: string;
@@ -35,6 +36,7 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
   const [isAddingSubcat, setIsAddingSubcat] = useState(false);
   const [editingSubcat, setEditingSubcat] = useState<{ id: number; name: string } | null>(null);
   const [isUpdatingSubcat, setIsUpdatingSubcat] = useState(false);
+  const [togglingPriority, setTogglingPriority] = useState<number | null>(null);
 
   // ─── CREATE HANDLERS ───
   const validateCreateForm = (): boolean => {
@@ -128,6 +130,22 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
       }
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  // ─── PRIORITY HANDLER ───
+  const handleTogglePriority = async (categoryId: number, currentPriority: boolean) => {
+    setTogglingPriority(categoryId);
+    try {
+      await toggleCategoryPriority(categoryId, !currentPriority, token);
+      toast.success(
+        'Priority updated',
+        `Category has been marked as ${!currentPriority ? 'priority' : 'regular'}.`
+      );
+    } catch (err: any) {
+      toast.error('Failed to update', err?.message || 'Could not toggle priority.');
+    } finally {
+      setTogglingPriority(null);
     }
   };
 
@@ -257,12 +275,34 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
               {categories.map((cat) => (
                 <div key={cat.id} className="flex items-center justify-between p-4 bg-white border border-[var(--color-border)] rounded-xl hover:shadow-sm transition-shadow">
                   <div className="flex-1">
-                    <p className="font-semibold text-[var(--color-text-primary)]">{cat.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-[var(--color-text-primary)]">{cat.name}</p>
+                      {cat.is_priority && (
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" title="Priority Category" />
+                      )}
+                    </div>
                     <p className="text-xs text-[var(--color-text-muted)] mt-1">
                       {cat.subcategories?.length || 0} subcategorie{(cat.subcategories?.length || 0) !== 1 ? 's' : ''}
                     </p>
                   </div>
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => handleTogglePriority(cat.id, cat.is_priority || false)}
+                      disabled={togglingPriority === cat.id}
+                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                        cat.is_priority
+                          ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                          : 'text-amber-600 hover:bg-amber-50'
+                      } disabled:opacity-50`}
+                      title={cat.is_priority ? 'Remove from priority' : 'Mark as priority'}
+                    >
+                      {togglingPriority === cat.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Star className={`w-4 h-4 ${cat.is_priority ? 'fill-current' : ''}`} />
+                      )}
+                      {cat.is_priority ? 'Priority' : 'Set Priority'}
+                    </button>
                     <button
                       onClick={() => handleEditClick(cat)}
                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold text-[var(--color-primary)] hover:bg-red-50 transition-colors"

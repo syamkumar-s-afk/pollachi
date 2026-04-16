@@ -173,7 +173,7 @@ export async function createCategory(
 
 export async function updateCategory(
   id: number,
-  updates: Partial<Category>,
+  updates: Partial<{ name: string; description: string; is_priority: boolean }>,
   token: string
 ): Promise<void> {
   await request(`/api/categories/${id}`, {
@@ -183,6 +183,21 @@ export async function updateCategory(
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(updates),
+  });
+}
+
+export async function toggleCategoryPriority(
+  id: number,
+  is_priority: boolean,
+  token: string
+): Promise<void> {
+  await request(`/api/categories/${id}/priority`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ is_priority }),
   });
 }
 

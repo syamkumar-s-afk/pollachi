@@ -38,6 +38,7 @@ export async function getDb() {
       slug VARCHAR(100) NOT NULL UNIQUE,
       description TEXT,
       display_order INT DEFAULT 0,
+      is_priority BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );

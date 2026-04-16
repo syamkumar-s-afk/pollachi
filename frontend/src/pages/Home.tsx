@@ -65,7 +65,7 @@ function ListingCard({ biz, index }: { biz: Business; index: number }) {
         <div className="mt-2 flex items-start gap-2.5 text-[13px] text-[var(--color-text-secondary)]">
           <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-[var(--color-text-muted)] mt-0.5" />
           <span className="line-clamp-3 leading-relaxed font-medium break-words">
-            {biz.address}, {biz.city}
+            {biz.address}
           </span>
         </div>
 

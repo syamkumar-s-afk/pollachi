@@ -113,7 +113,7 @@ app.get('/api/businesses', async (req, res) => {
   const totalPages = Math.ceil(total / limit);
 
   // Get paginated data
-  const dataQuery = `SELECT * FROM businesses${whereClause} ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+  const dataQuery = `SELECT * FROM businesses${whereClause} ORDER BY created_at ASC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
   const result = await db.query(dataQuery, [...params, limit, offset]);
 
   res.json({

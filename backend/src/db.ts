@@ -71,6 +71,12 @@ export async function getDb() {
     );
   `);
 
+  // Add is_priority column if it doesn't exist (migration)
+  await dbInstance.query(`
+    ALTER TABLE categories
+    ADD COLUMN IF NOT EXISTS is_priority BOOLEAN DEFAULT FALSE;
+  `);
+
   // Insert default admin if no admin
   const adminRes = await dbInstance.query('SELECT id FROM admin WHERE username = $1', ['admin']);
   if (adminRes.rowCount === 0) {

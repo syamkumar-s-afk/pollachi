@@ -278,7 +278,9 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-[var(--color-text-primary)]">{cat.name}</p>
                       {cat.is_priority && (
-                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" title="Priority Category" />
+                        <span title="Priority Category">
+                          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        </span>
                       )}
                     </div>
                     <p className="text-xs text-[var(--color-text-muted)] mt-1">

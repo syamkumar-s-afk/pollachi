@@ -6,6 +6,7 @@ import {
   Phone,
   MessageCircle,
   Check,
+  X,
 } from 'lucide-react';
 import type { Business } from '../types';
 import { getImageUrl } from '../utils/imageUtils';
@@ -28,6 +29,7 @@ export default function BusinessCard({
   variant = 'grid',
 }: BusinessCardProps) {
   const [copied, setCopied] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   const imageUrl = getImageUrl(biz.image);
 
@@ -57,23 +59,31 @@ export default function BusinessCard({
 
   if (variant === 'list') {
     return (
-      <article
-        className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-4 flex flex-row gap-4 hover:shadow-md transition-all duration-300 group`}
-        aria-label={`${biz.name} — ${biz.category}`}
-      >
-        {/* Image */}
-        <div className="w-[88px] h-[93px] md:w-[98px] md:h-[103px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100">
-          <img
-            src={imageUrl}
-            alt={`${biz.name} storefront`}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
-            onError={(e) => {
-              e.currentTarget.src =
-                'https://placehold.co/400x300?text=No+Image';
-            }}
-          />
-        </div>
+      <>
+        <article
+          className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-4 flex flex-row gap-4 hover:shadow-md transition-all duration-300 group`}
+          aria-label={`${biz.name} — ${biz.category}`}
+        >
+          {/* Image */}
+          <div
+            className="w-[88px] h-[93px] md:w-[98px] md:h-[103px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setShowImageModal(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') setShowImageModal(true); }}
+            aria-label={`View ${biz.name} image`}
+          >
+            <img
+              src={imageUrl}
+              alt={`${biz.name} storefront`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.src =
+                  'https://placehold.co/400x300?text=No+Image';
+              }}
+            />
+          </div>
 
         {/* Content */}
         <div className="flex flex-col flex-grow min-w-0">
@@ -129,34 +139,82 @@ export default function BusinessCard({
                 </>
               ) : (
                 <>
-                  <Share2 className="w-3 h-3" /> Share
+                  <Share2 className="w-3 h-3" /> 
                 </>
               )}
             </button>
           </div>
         </div>
       </article>
+
+      {/* Image Preview Modal */}
+      {showImageModal && (
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowImageModal(false)}
+        >
+          <div
+            className="relative max-w-2xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setShowImageModal(false)}
+              className="absolute -top-10 right-0 text-white hover:bg-white/20 rounded-full p-2 transition-colors md:-top-12 md:-right-12"
+              aria-label="Close image preview"
+            >
+              <X className="w-6 h-6 md:w-8 md:h-8" />
+            </button>
+
+            {/* Image */}
+            <img
+              src={imageUrl}
+              alt={`${biz.name} preview`}
+              className="w-full h-auto rounded-lg shadow-2xl"
+              onError={(e) => {
+                e.currentTarget.src =
+                  'https://placehold.co/800x600?text=No+Image';
+              }}
+            />
+
+            {/* Image Info */}
+            <div className="mt-4 text-center text-white">
+              <p className="text-sm md:text-base font-medium">{biz.name}</p>
+              <p className="text-xs md:text-sm text-gray-300">{biz.category}</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
     );
   }
 
   // Grid variant (vertical card)
   return (
-    <article
-      className={`card-animate ${delayClass} bg-white rounded-xl overflow-hidden shadow-sm border border-[var(--color-border)] hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group flex flex-col`}
-      aria-label={`${biz.name} — ${biz.category}`}
-    >
-      {/* Card Image */}
-      <div className="relative h-40 bg-gray-100 overflow-hidden">
-        <img
-          src={imageUrl}
-          alt={`${biz.name} storefront`}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.src = 'https://placehold.co/400x300?text=No+Image';
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+    <>
+      <article
+        className={`card-animate ${delayClass} bg-white rounded-xl overflow-hidden shadow-sm border border-[var(--color-border)] hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group flex flex-col`}
+        aria-label={`${biz.name} — ${biz.category}`}
+      >
+        {/* Card Image */}
+        <div
+          className="relative h-40 bg-gray-100 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+          onClick={() => setShowImageModal(true)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter') setShowImageModal(true); }}
+          aria-label={`View ${biz.name} image`}
+        >
+          <img
+            src={imageUrl}
+            alt={`${biz.name} storefront`}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.src = 'https://placehold.co/400x300?text=No+Image';
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[var(--color-primary)] text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
           {biz.category}
         </span>
@@ -218,5 +276,45 @@ export default function BusinessCard({
         </div>
       </div>
     </article>
+
+    {/* Image Preview Modal */}
+    {showImageModal && (
+      <div
+        className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+        onClick={() => setShowImageModal(false)}
+      >
+        <div
+          className="relative max-w-2xl w-full"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Close Button */}
+          <button
+            onClick={() => setShowImageModal(false)}
+            className="absolute -top-10 right-0 text-white hover:bg-white/20 rounded-full p-2 transition-colors md:-top-12 md:-right-12"
+            aria-label="Close image preview"
+          >
+            <X className="w-6 h-6 md:w-8 md:h-8" />
+          </button>
+
+          {/* Image */}
+          <img
+            src={imageUrl}
+            alt={`${biz.name} preview`}
+            className="w-full h-auto rounded-lg shadow-2xl"
+            onError={(e) => {
+              e.currentTarget.src =
+                'https://placehold.co/800x600?text=No+Image';
+            }}
+          />
+
+          {/* Image Info */}
+          <div className="mt-4 text-center text-white">
+            <p className="text-sm md:text-base font-medium">{biz.name}</p>
+            <p className="text-xs md:text-sm text-gray-300">{biz.category}</p>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

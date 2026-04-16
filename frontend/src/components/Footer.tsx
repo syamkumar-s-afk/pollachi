@@ -65,35 +65,30 @@ export default function Footer() {
             </ul>
           </nav>
 
-          {/* Policy */}
-          <nav aria-label="Legal and policy links">
+          {/* More Info */}
+          <nav aria-label="More information links">
             <h3 className="text-white text-sm font-bold mb-3 tracking-wider uppercase">
-              Policy
+              More Info
             </h3>
             <ul className="space-y-1 text-sm text-gray-400">
               <li>
                 <span className="hover:text-white transition-colors flex items-center gap-2 cursor-default">
-                  Terms of Use
+                  About us
                 </span>
               </li>
               <li>
                 <span className="hover:text-white transition-colors flex items-center gap-2 cursor-default">
-                  Privacy Policy
+                  Services
                 </span>
               </li>
               <li>
                 <span className="hover:text-white transition-colors flex items-center gap-2 cursor-default">
-                  Refund &amp; Cancellation
+                  Why join
                 </span>
               </li>
               <li>
                 <span className="hover:text-white transition-colors flex items-center gap-2 cursor-default">
-                  Service Terms
-                </span>
-              </li>
-              <li>
-                <span className="hover:text-white transition-colors flex items-center gap-2 cursor-default">
-                  FAQ
+                  Contact us
                 </span>
               </li>
             </ul>

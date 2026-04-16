@@ -55,16 +55,16 @@ function ListingCard({ biz, index }: { biz: Business; index: number }) {
           </span>
         </div>
 
-        <div className="mt-0.5 flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
+        <div className="mt-1 flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
           <BookOpen className="w-3 h-3 flex-shrink-0 text-[var(--color-text-muted)]" />
           <span className="line-clamp-1 font-medium">
             {biz.category}, {biz.sub_category}
           </span>
         </div>
 
-        <div className="mt-0.5 flex items-start gap-2 text-[13px] text-[var(--color-text-secondary)]">
-          <MapPin className="w-3 h-3 flex-shrink-0 text-[var(--color-text-muted)] mt-[1px]" />
-          <span className="line-clamp-2 leading-tight font-medium">
+        <div className="mt-2 flex items-start gap-2.5 text-[13px] text-[var(--color-text-secondary)]">
+          <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-[var(--color-text-muted)] mt-0.5" />
+          <span className="line-clamp-3 leading-relaxed font-medium break-words">
             {biz.address}, {biz.city}
           </span>
         </div>

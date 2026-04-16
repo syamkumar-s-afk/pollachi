@@ -18,34 +18,34 @@ import { useCategories } from '../hooks/useCategories';
 
 /* ─── Icon map for each category ─── */
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  Education: <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4" />,
-  Finance: <Landmark className="w-3 h-3 sm:w-4 sm:h-4" />,
-  'Food & Beverage': <UtensilsCrossed className="w-3 h-3 sm:w-4 sm:h-4" />,
-  Healthcare: <HeartPulse className="w-3 h-3 sm:w-4 sm:h-4" />,
-  'Real Estate': <Home className="w-3 h-3 sm:w-4 sm:h-4" />,
-  Retail: <ShoppingBag className="w-3 h-3 sm:w-4 sm:h-4" />,
-  Services: <Wrench className="w-3 h-3 sm:w-4 sm:h-4" />,
-  Technology: <Cpu className="w-3 h-3 sm:w-4 sm:h-4" />,
-  'Travel & Transport': <Bus className="w-3 h-3 sm:w-4 sm:h-4" />,
-  Automotive: <Car className="w-3 h-3 sm:w-4 sm:h-4" />,
-  Grocery: <Apple className="w-3 h-3 sm:w-4 sm:h-4" />,
-  Restaurant: <ChefHat className="w-3 h-3 sm:w-4 sm:h-4" />,
+  Education: <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5" />,
+  Finance: <Landmark className="w-4 h-4 sm:w-5 sm:h-5" />,
+  'Food & Beverage': <UtensilsCrossed className="w-4 h-4 sm:w-5 sm:h-5" />,
+  Healthcare: <HeartPulse className="w-4 h-4 sm:w-5 sm:h-5" />,
+  'Real Estate': <Home className="w-4 h-4 sm:w-5 sm:h-5" />,
+  Retail: <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />,
+  Services: <Wrench className="w-4 h-4 sm:w-5 sm:h-5" />,
+  Technology: <Cpu className="w-4 h-4 sm:w-5 sm:h-5" />,
+  'Travel & Transport': <Bus className="w-4 h-4 sm:w-5 sm:h-5" />,
+  Automotive: <Car className="w-4 h-4 sm:w-5 sm:h-5" />,
+  Grocery: <Apple className="w-4 h-4 sm:w-5 sm:h-5" />,
+  Restaurant: <ChefHat className="w-4 h-4 sm:w-5 sm:h-5" />,
 };
 
-/* ─── Gradient colours for pills (cycle through) ─── */
+/* ─── Gradient colours for pills (cycle through) - Enhanced with darker tones and higher contrast ─── */
 const PILL_COLORS = [
-  'from-red-500/10 to-red-500/5 text-red-700 border-red-200',
-  'from-blue-500/10 to-blue-500/5 text-blue-700 border-blue-200',
-  'from-emerald-500/10 to-emerald-500/5 text-emerald-700 border-emerald-200',
-  'from-violet-500/10 to-violet-500/5 text-violet-700 border-violet-200',
-  'from-amber-500/10 to-amber-500/5 text-amber-700 border-amber-200',
-  'from-pink-500/10 to-pink-500/5 text-pink-700 border-pink-200',
-  'from-teal-500/10 to-teal-500/5 text-teal-700 border-teal-200',
-  'from-orange-500/10 to-orange-500/5 text-orange-700 border-orange-200',
-  'from-cyan-500/10 to-cyan-500/5 text-cyan-700 border-cyan-200',
-  'from-indigo-500/10 to-indigo-500/5 text-indigo-700 border-indigo-200',
-  'from-lime-500/10 to-lime-500/5 text-lime-700 border-lime-200',
-  'from-rose-500/10 to-rose-500/5 text-rose-700 border-rose-200',
+  'from-red-600/25 to-red-600/15 text-red-900 border-red-500 shadow-sm',
+  'from-blue-600/25 to-blue-600/15 text-blue-900 border-blue-500 shadow-sm',
+  'from-emerald-600/25 to-emerald-600/15 text-emerald-900 border-emerald-500 shadow-sm',
+  'from-violet-600/25 to-violet-600/15 text-violet-900 border-violet-500 shadow-sm',
+  'from-amber-600/25 to-amber-600/15 text-amber-900 border-amber-500 shadow-sm',
+  'from-pink-600/25 to-pink-600/15 text-pink-900 border-pink-500 shadow-sm',
+  'from-teal-600/25 to-teal-600/15 text-teal-900 border-teal-500 shadow-sm',
+  'from-orange-600/25 to-orange-600/15 text-orange-900 border-orange-500 shadow-sm',
+  'from-cyan-600/25 to-cyan-600/15 text-cyan-900 border-cyan-500 shadow-sm',
+  'from-indigo-600/25 to-indigo-600/15 text-indigo-900 border-indigo-500 shadow-sm',
+  'from-lime-600/25 to-lime-600/15 text-lime-900 border-lime-500 shadow-sm',
+  'from-rose-600/25 to-rose-600/15 text-rose-900 border-rose-500 shadow-sm',
 ];
 
 export default function CategoryMarquee() {
@@ -184,11 +184,11 @@ export default function CategoryMarquee() {
               className={`
                 inline-flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2.5
                 bg-gradient-to-br ${PILL_COLORS[idx % PILL_COLORS.length]}
-                border
-                font-semibold text-[10px] sm:text-[13px] tracking-wide
-                hover:scale-105 hover:shadow-md
+                border-2
+                font-bold text-[11px] sm:text-[14px] tracking-wide
+                hover:scale-110 hover:shadow-lg
                 transition-all duration-200
-                flex-shrink-0 cursor-pointer
+                flex-shrink-0 cursor-pointer rounded-full
               `}
             >
               {CATEGORY_ICONS[cat] || null}

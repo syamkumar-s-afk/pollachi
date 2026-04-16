@@ -8,6 +8,10 @@ import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Listings from './pages/Listings';
 import AddBusiness from './pages/AddBusiness';
+import AboutUs from './pages/AboutUs';
+import Services from './pages/Services';
+import WhyJoin from './pages/WhyJoin';
+import ContactUs from './pages/ContactUs';
 
 function App() {
   return (
@@ -25,6 +29,10 @@ function App() {
               <Route path="/admin" element={<Admin />} />
               <Route path="/listings" element={<Listings />} />
               <Route path="/add-business" element={<AddBusiness />} />
+              <Route path="/about-us" element={<AboutUs />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/why-join" element={<WhyJoin />} />
+              <Route path="/contact-us" element={<ContactUs />} />
             </Routes>
           </main>
           <Footer />

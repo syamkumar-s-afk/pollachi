@@ -72,24 +72,40 @@ export default function Footer() {
             </h3>
             <ul className="space-y-1 text-sm text-gray-400">
               <li>
-                <span className="hover:text-white transition-colors flex items-center gap-2 cursor-default">
+                <Link
+                  to="/about-us"
+                  className="hover:text-white transition-colors flex items-center gap-2 group"
+                >
+                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   About us
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-white transition-colors flex items-center gap-2 cursor-default">
+                <Link
+                  to="/services"
+                  className="hover:text-white transition-colors flex items-center gap-2 group"
+                >
+                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Services
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-white transition-colors flex items-center gap-2 cursor-default">
+                <Link
+                  to="/why-join"
+                  className="hover:text-white transition-colors flex items-center gap-2 group"
+                >
+                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Why join
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-white transition-colors flex items-center gap-2 cursor-default">
+                <Link
+                  to="/contact-us"
+                  className="hover:text-white transition-colors flex items-center gap-2 group"
+                >
+                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Contact us
-                </span>
+                </Link>
               </li>
             </ul>
           </nav>

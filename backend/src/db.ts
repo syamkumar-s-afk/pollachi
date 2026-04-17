@@ -88,53 +88,8 @@ export async function getDb() {
     await dbInstance.query('INSERT INTO admin (username, password) VALUES ($1, $2)', ['admin', hash]);
   }
 
-  // Seed categories and subcategories
-  const categoryData = [
-    { name: 'Education', slug: 'education', subcategories: ['School', 'College'] },
-    { name: 'Finance', slug: 'finance', subcategories: [] },
-    { name: 'Food & Beverage', slug: 'food-beverage', subcategories: ['Cafe'] },
-    { name: 'Healthcare', slug: 'healthcare', subcategories: ['Hospital', 'Clinic', 'Pharmacy'] },
-    { name: 'Real Estate', slug: 'real-estate', subcategories: [] },
-    { name: 'Retail', slug: 'retail', subcategories: ['Supermarket', "Men's Wear", "Women's Wear", 'Electronics'] },
-    { name: 'Services', slug: 'services', subcategories: ['Hotels'] },
-    { name: 'Technology', slug: 'technology', subcategories: [] },
-    { name: 'Travel & Transport', slug: 'travel-transport', subcategories: [] },
-    { name: 'Automotive', slug: 'automotive', subcategories: ['Automotive Repair'] },
-    { name: 'Grocery', slug: 'grocery', subcategories: ['Vegetable, Milk'] },
-    { name: 'Restaurant', slug: 'restaurant', subcategories: ['Veg', 'Non-veg', 'Restaurant'] }
-  ];
-
-  for (const cat of categoryData) {
-    // Check if category exists
-    let categoryId: number;
-    const catSearch = await dbInstance.query('SELECT id FROM categories WHERE name = $1', [cat.name]);
-    
-    if (catSearch.rowCount === 0) {
-      const catInsert = await dbInstance.query(
-        'INSERT INTO categories (name, slug, created_at, updated_at) VALUES ($1, $2, NOW(), NOW()) RETURNING id',
-        [cat.name, cat.slug]
-      );
-      categoryId = catInsert.rows[0].id;
-    } else {
-      categoryId = catSearch.rows[0].id;
-    }
-
-    // Seed subcategories for this category if missing
-    for (const subcat of cat.subcategories) {
-      const subSearch = await dbInstance.query(
-        'SELECT id FROM subcategories WHERE category_id = $1 AND name = $2',
-        [categoryId, subcat]
-      );
-      
-      if (subSearch.rowCount === 0) {
-        const subcatSlug = subcat.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-        await dbInstance.query(
-          'INSERT INTO subcategories (category_id, name, slug, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW())',
-          [categoryId, subcat, subcatSlug]
-        );
-      }
-    }
-  }
+  // NOTE: Categories and subcategories are now managed exclusively through the admin panel.
+  // No hardcoded seeding is performed. All categories must be created via the API.
 
   // Synchronize businesses back to subcategories table if missing (Import custom subcategories)
   const usedSubcats = await dbInstance.query('SELECT DISTINCT category, sub_category FROM businesses');
@@ -162,45 +117,7 @@ export async function getDb() {
 
   console.log('[DB] Categories and Subcategories synchronized');
 
-  // Insert sample data if no businesses
-  const bRes = await dbInstance.query('SELECT COUNT(*) as cnt FROM businesses');
-  if (parseInt(bRes.rows[0].cnt, 10) === 0) {
-    const sampleBusinesses = [
-      {
-        name: 'Amman Maligai',
-        category: 'Grocery',
-        sub_category: 'Vegetable, Milk',
-        city: 'Coimbatore',
-        address: '4/758-d5, Ravanan Complex, Andavar, Namakkal, Tamil Nadu, India- 637001',
-        phone: '+919876543210',
-        whatsapp: '+919876543210',
-        image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80',
-        adId: '#AdSR001'
-      },
-      {
-        name: 'SK Briyani',
-        category: 'Restaurant',
-        sub_category: 'Non-veg',
-        city: 'Coimbatore',
-        address: '4/758-d5, Ravanan Complex, Andavar, Namakkal, Tamil Nadu, India- 637001',
-        phone: '+919876543210',
-        whatsapp: '+919876543210',
-        image: 'https://images.unsplash.com/photo-1589302168068-964664d93cb0?w=800&q=80',
-        adId: '#AdSR002'
-      }
-    ];
-
-    for (const sb of sampleBusinesses) {
-      await dbInstance.query(
-        `INSERT INTO businesses (name, category, sub_category, city, address, phone, whatsapp, image, adId)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [sb.name, sb.category, sb.sub_category, sb.city, sb.address, sb.phone, sb.whatsapp, sb.image, sb.adId]
-      );
-    }
-    console.log('[DB] Businesses seeded successfully');
-  }
-
-  // Seed advertisements robustly
+  // Advertisement slots (no sample businesses - admins must create categories first)
   const slots = ['ad1', 'ad2', 'ad3', 'inline-ad'];
   for (const slot of slots) {
     await dbInstance.query(

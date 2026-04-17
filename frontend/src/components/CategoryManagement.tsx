@@ -23,18 +23,19 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Create form state
-  const [createForm, setCreateForm] = useState({ name: '' });
-  const [createSubcats, setCreateSubcats] = useState<string[]>(['']);
+  const [createForm, setCreateForm] = useState({ name: '', displayOrder: undefined as number | undefined });
+  const [createSubcats, setCreateSubcats] = useState<{ name: string; displayOrder: number | undefined }[]>([{ name: '', displayOrder: undefined }]);
   const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
   const [isCreating, setIsCreating] = useState(false);
 
   // Edit form state
-  const [editForm, setEditForm] = useState({ name: '' });
+  const [editForm, setEditForm] = useState({ name: '', displayOrder: undefined as number | undefined });
   const [newSubcatName, setNewSubcatName] = useState('');
+  const [newSubcatDisplayOrder, setNewSubcatDisplayOrder] = useState(undefined as number | undefined);
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [isUpdating, setIsUpdating] = useState(false);
   const [isAddingSubcat, setIsAddingSubcat] = useState(false);
-  const [editingSubcat, setEditingSubcat] = useState<{ id: number; name: string } | null>(null);
+  const [editingSubcat, setEditingSubcat] = useState<{ id: number; name: string; displayOrder: number | undefined } | null>(null);
   const [isUpdatingSubcat, setIsUpdatingSubcat] = useState(false);
   const [togglingPriority, setTogglingPriority] = useState<number | null>(null);
 
@@ -45,7 +46,7 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
     else if (createForm.name.trim().length < 2) errors.name = 'Name must be at least 2 characters';
     else if (createForm.name.trim().length > 100) errors.name = 'Name cannot exceed 100 characters';
 
-    const validSubcats = createSubcats.map(s => s.trim()).filter(Boolean);
+    const validSubcats = createSubcats.map(s => s.name.trim()).filter(Boolean);
     if (validSubcats.length === 0) {
       errors.subcategories = 'At least one subcategory is required';
     }
@@ -60,22 +61,21 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
 
     setIsCreating(true);
     try {
-      const newCat = await createCategory(createForm.name, '', token);
-      
-      const validSubcats = createSubcats.map(s => s.trim()).filter(Boolean);
-      const uniqueSubcats = Array.from(new Set(validSubcats));
-      
-      for (const subName of uniqueSubcats) {
+      const newCat = await createCategory(createForm.name, '', token, createForm.displayOrder);
+
+      const validSubcats = createSubcats.filter(s => s.name.trim());
+
+      for (const subcat of validSubcats) {
         try {
-          await createSubcategory(newCat.id, subName, token);
+          await createSubcategory(newCat.id, subcat.name, token, subcat.displayOrder);
         } catch (subErr) {
-          console.error("Failed to add subcategory:", subName);
+          console.error("Failed to add subcategory:", subcat.name);
         }
       }
 
       toast.success('Category created', `"${createForm.name}" has been added.`);
-      setCreateForm({ name: '' });
-      setCreateSubcats(['']);
+      setCreateForm({ name: '', displayOrder: undefined });
+      setCreateSubcats([{ name: '', displayOrder: undefined }]);
       setCreateErrors({});
       setActiveTab('list');
     } catch (err: any) {
@@ -93,8 +93,9 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
   // ─── EDIT HANDLERS ───
   const handleEditClick = (category: Category) => {
     setEditingCategory(category);
-    setEditForm({ name: category.name });
+    setEditForm({ name: category.name, displayOrder: category.display_order });
     setNewSubcatName('');
+    setNewSubcatDisplayOrder(undefined);
     setEditErrors({});
     setActiveTab('edit');
   };
@@ -115,10 +116,10 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
 
     setIsUpdating(true);
     try {
-      await updateCategory(editingCategory.id, { name: editForm.name }, token);
+      await updateCategory(editingCategory.id, { name: editForm.name, display_order: editForm.displayOrder }, token);
       toast.success('Category updated', `"${editForm.name}" has been saved.`);
       setEditingCategory(null);
-      setEditForm({ name: '' });
+      setEditForm({ name: '', displayOrder: undefined });
       setEditErrors({});
       setActiveTab('list');
     } catch (err: any) {
@@ -181,9 +182,10 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
 
     setIsAddingSubcat(true);
     try {
-      await createSubcategory(editingCategory.id, newSubcatName, token);
+      await createSubcategory(editingCategory.id, newSubcatName, token, newSubcatDisplayOrder);
       toast.success('Subcategory added', `"${newSubcatName}" has been created.`);
       setNewSubcatName('');
+      setNewSubcatDisplayOrder(undefined);
       // Refresh the editing category
       const updatedCategory = categories.find(c => c.id === editingCategory.id);
       if (updatedCategory) {
@@ -202,17 +204,17 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
 
     setIsUpdatingSubcat(true);
     try {
-      await categoryStore.updateSubcategory(editingSubcat.id, editingSubcat.name, token);
+      await categoryStore.updateSubcategory(editingSubcat.id, editingSubcat.name, token, editingSubcat.displayOrder);
       toast.success('Subcategory updated', `"${editingSubcat.name}" has been saved.`);
       setEditingSubcat(null);
-      
+
       // We manually update local editingCategory state to reflect the change
       setEditingCategory(prev => {
         if (!prev) return prev;
         return {
           ...prev,
           subcategories: prev.subcategories?.map(sc =>
-            sc.id === editingSubcat.id ? { ...sc, name: editingSubcat.name } : sc
+            sc.id === editingSubcat.id ? { ...sc, name: editingSubcat.name, display_order: editingSubcat.displayOrder } : sc
           )
         };
       });
@@ -343,20 +345,46 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
           </div>
 
           <div>
+            <label className="block text-sm font-semibold text-[var(--color-text-secondary)] mb-2">Serial Number</label>
+            <input
+              type="number"
+              value={createForm.displayOrder ?? ''}
+              onChange={(e) => setCreateForm({ ...createForm, displayOrder: e.target.value ? parseInt(e.target.value, 10) : undefined })}
+              placeholder="Leave empty for auto-increment"
+              className="w-full border border-[var(--color-border)] rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-colors"
+              min="0"
+            />
+            <p className="text-xs text-[var(--color-text-muted)] mt-1">Lower numbers appear first. Leave empty to auto-assign.</p>
+          </div>
+
+          <div>
             <label className="block text-sm font-semibold text-[var(--color-text-secondary)] mb-2">Subcategories *</label>
             <div className="space-y-2 mb-3">
               {createSubcats.map((sc, idx) => (
                 <div key={idx} className="flex gap-2">
                   <input
                     type="text"
-                    value={sc}
+                    value={sc.name}
                     onChange={(e) => {
                       const newArr = [...createSubcats];
-                      newArr[idx] = e.target.value;
+                      newArr[idx] = { ...newArr[idx], name: e.target.value };
                       setCreateSubcats(newArr);
                     }}
                     placeholder="e.g., Fast Food, Grocery Store"
                     className="flex-1 border border-[var(--color-border)] rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-colors"
+                  />
+                  <input
+                    type="number"
+                    value={sc.displayOrder ?? ''}
+                    onChange={(e) => {
+                      const newArr = [...createSubcats];
+                      newArr[idx] = { ...newArr[idx], displayOrder: e.target.value ? parseInt(e.target.value, 10) : undefined };
+                      setCreateSubcats(newArr);
+                    }}
+                    placeholder="Order"
+                    className="w-16 border border-[var(--color-border)] rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-colors"
+                    min="0"
+                    title="Serial number for ordering"
                   />
                   {createSubcats.length > 1 && (
                     <button
@@ -373,7 +401,7 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
             {createErrors.subcategories && <p className="text-xs text-red-600 mb-2">{createErrors.subcategories}</p>}
             <button
               type="button"
-              onClick={() => setCreateSubcats([...createSubcats, ''])}
+              onClick={() => setCreateSubcats([...createSubcats, { name: '', displayOrder: undefined }])}
               className="text-sm font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Add another subcategory
@@ -415,6 +443,19 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
               {editErrors.name && <p className="text-xs text-red-600 mt-1">{editErrors.name}</p>}
             </div>
 
+            <div>
+              <label className="block text-sm font-semibold text-[var(--color-text-secondary)] mb-2">Serial Number</label>
+              <input
+                type="number"
+                value={editForm.displayOrder ?? ''}
+                onChange={(e) => setEditForm({ ...editForm, displayOrder: e.target.value ? parseInt(e.target.value, 10) : undefined })}
+                placeholder="Lower numbers appear first"
+                className="w-full border border-[var(--color-border)] rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-colors"
+                min="0"
+              />
+              <p className="text-xs text-[var(--color-text-muted)] mt-1">Lower numbers appear first in listing and filters.</p>
+            </div>
+
             {/* Subcategories integrated manager */}
             <div className="pt-2">
               <label className="block text-sm font-semibold text-[var(--color-text-secondary)] mb-3">Subcategories *</label>
@@ -438,6 +479,15 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
                               }
                             }}
                           />
+                          <input
+                            type="number"
+                            value={editingSubcat.displayOrder ?? ''}
+                            onChange={(e) => setEditingSubcat({ ...editingSubcat, displayOrder: e.target.value ? parseInt(e.target.value, 10) : undefined })}
+                            placeholder="Order"
+                            className="w-16 border border-[var(--color-border)] rounded-md p-1.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]"
+                            min="0"
+                            title="Serial number for ordering"
+                          />
                           <button
                             type="button"
                             disabled={isUpdatingSubcat || !editingSubcat.name.trim()}
@@ -456,11 +506,16 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
                         </div>
                       ) : (
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-semibold text-[var(--color-text-secondary)]">{subcat.name}</p>
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--color-text-secondary)]">{subcat.name}</p>
+                            {subcat.display_order !== undefined && (
+                              <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Serial: {subcat.display_order}</p>
+                            )}
+                          </div>
                           <div className="flex gap-2">
                             <button
                               type="button"
-                              onClick={() => setEditingSubcat({ id: subcat.id, name: subcat.name })}
+                              onClick={() => setEditingSubcat({ id: subcat.id, name: subcat.name, displayOrder: subcat.display_order })}
                               className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors cursor-pointer p-1"
                               title="Edit"
                             >
@@ -498,6 +553,15 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
                       handleAddSubcategory();
                     }
                   }}
+                />
+                <input
+                  type="number"
+                  value={newSubcatDisplayOrder ?? ''}
+                  onChange={(e) => setNewSubcatDisplayOrder(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                  placeholder="Order"
+                  className="w-16 border border-[var(--color-border)] rounded-xl p-2.5 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]"
+                  min="0"
+                  title="Serial number for ordering"
                 />
                 <button
                   type="button"

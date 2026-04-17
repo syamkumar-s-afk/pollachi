@@ -203,14 +203,14 @@ app.get('/api/categories', async (req, res) => {
   try {
     const db = await getDb();
     const categoriesResult = await db.query(
-      'SELECT id, name, slug, description, is_priority, created_at, updated_at FROM categories ORDER BY is_priority DESC, created_at DESC'
+      'SELECT id, name, slug, description, display_order, is_priority, created_at, updated_at FROM categories ORDER BY display_order ASC, is_priority DESC'
     );
 
     const categories = categoriesResult.rows;
     const categoriesWithSubs = await Promise.all(
       categories.map(async (cat: any) => {
         const subsResult = await db.query(
-          'SELECT id, category_id, name, slug, created_at, updated_at FROM subcategories WHERE category_id = $1 ORDER BY created_at ASC',
+          'SELECT id, category_id, name, slug, display_order, created_at, updated_at FROM subcategories WHERE category_id = $1 ORDER BY display_order ASC',
           [cat.id]
         );
         return {
@@ -230,7 +230,7 @@ app.get('/api/categories', async (req, res) => {
 app.post('/api/categories', auth, async (req, res) => {
   try {
     const db = await getDb();
-    const { name, description } = req.body;
+    const { name, description, display_order } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100) {
       return res.status(400).json({
@@ -255,9 +255,17 @@ app.post('/api/categories', auth, async (req, res) => {
       });
     }
 
+    // Determine display_order: if not provided, use max existing + 1
+    let finalDisplayOrder = display_order;
+    if (finalDisplayOrder === undefined || finalDisplayOrder === null) {
+      const maxOrderResult = await db.query('SELECT MAX(display_order) as max_order FROM categories');
+      const maxOrder = maxOrderResult.rows[0]?.max_order || 0;
+      finalDisplayOrder = maxOrder + 1;
+    }
+
     const result = await db.query(
-      'INSERT INTO categories (name, slug, description, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id, name, slug, description, created_at, updated_at',
-      [trimmedName, slug, description || null]
+      'INSERT INTO categories (name, slug, description, display_order, created_at, updated_at) VALUES ($1, $2, $3, $4, NOW(), NOW()) RETURNING id, name, slug, description, display_order, created_at, updated_at',
+      [trimmedName, slug, description || null, finalDisplayOrder]
     );
 
     res.json(result.rows[0]);
@@ -271,7 +279,7 @@ app.put('/api/categories/:id', auth, async (req, res) => {
   try {
     const db = await getDb();
     const { id } = req.params;
-    const { name, description, is_priority } = req.body;
+    const { name, description, is_priority, display_order } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100) {
       return res.status(400).json({
@@ -307,10 +315,11 @@ app.put('/api/categories/:id', auth, async (req, res) => {
 
     const slug = generateSlug(trimmedName);
     const priorityValue = is_priority === true ? true : false;
+    const displayOrderValue = display_order !== undefined ? display_order : null;
 
     await db.query(
-      'UPDATE categories SET name = $1, slug = $2, description = $3, is_priority = $4, updated_at = NOW() WHERE id = $5',
-      [trimmedName, slug, description || null, priorityValue, id]
+      'UPDATE categories SET name = $1, slug = $2, description = $3, is_priority = $4, display_order = COALESCE($5, display_order), updated_at = NOW() WHERE id = $6',
+      [trimmedName, slug, description || null, priorityValue, displayOrderValue, id]
     );
 
     res.json({ success: true });
@@ -385,7 +394,7 @@ app.post('/api/categories/:id/subcategories', auth, async (req, res) => {
   try {
     const db = await getDb();
     const { id: categoryId } = req.params;
-    const { name } = req.body;
+    const { name, display_order } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100) {
       return res.status(400).json({
@@ -417,9 +426,20 @@ app.post('/api/categories/:id/subcategories', auth, async (req, res) => {
 
     const slug = generateSlug(trimmedName);
 
+    // Determine display_order: if not provided, use max existing + 1 for this category
+    let finalDisplayOrder = display_order;
+    if (finalDisplayOrder === undefined || finalDisplayOrder === null) {
+      const maxOrderResult = await db.query(
+        'SELECT MAX(display_order) as max_order FROM subcategories WHERE category_id = $1',
+        [categoryId]
+      );
+      const maxOrder = maxOrderResult.rows[0]?.max_order || 0;
+      finalDisplayOrder = maxOrder + 1;
+    }
+
     const result = await db.query(
-      'INSERT INTO subcategories (category_id, name, slug, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id, category_id, name, slug, created_at, updated_at',
-      [categoryId, trimmedName, slug]
+      'INSERT INTO subcategories (category_id, name, slug, display_order, created_at, updated_at) VALUES ($1, $2, $3, $4, NOW(), NOW()) RETURNING id, category_id, name, slug, display_order, created_at, updated_at',
+      [categoryId, trimmedName, slug, finalDisplayOrder]
     );
 
     res.json(result.rows[0]);
@@ -433,7 +453,7 @@ app.put('/api/subcategories/:id', auth, async (req, res) => {
   try {
     const db = await getDb();
     const { id } = req.params;
-    const { name } = req.body;
+    const { name, display_order } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100) {
       return res.status(400).json({
@@ -468,10 +488,11 @@ app.put('/api/subcategories/:id', auth, async (req, res) => {
     }
 
     const slug = generateSlug(trimmedName);
+    const displayOrderValue = display_order !== undefined ? display_order : null;
 
     await db.query(
-      'UPDATE subcategories SET name = $1, slug = $2, updated_at = NOW() WHERE id = $3',
-      [trimmedName, slug, id]
+      'UPDATE subcategories SET name = $1, slug = $2, display_order = COALESCE($3, display_order), updated_at = NOW() WHERE id = $4',
+      [trimmedName, slug, displayOrderValue, id]
     );
 
     res.json({ success: true });

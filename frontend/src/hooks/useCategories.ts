@@ -16,12 +16,12 @@ export interface UseCategories {
   loading: boolean;
   error: string | null;
 
-  createCategory: (name: string, description?: string, token?: string) => Promise<Category>;
+  createCategory: (name: string, description?: string, token?: string, displayOrder?: number) => Promise<Category>;
   updateCategory: (id: number, updates: Partial<Category>, token: string) => Promise<void>;
   deleteCategory: (id: number, token: string) => Promise<void>;
 
-  createSubcategory: (categoryId: number, name: string, token: string) => Promise<Subcategory>;
-  updateSubcategory: (id: number, name: string, token: string) => Promise<void>;
+  createSubcategory: (categoryId: number, name: string, token: string, displayOrder?: number) => Promise<Subcategory>;
+  updateSubcategory: (id: number, name: string, token: string, displayOrder?: number) => Promise<void>;
   deleteSubcategory: (id: number, token: string) => Promise<void>;
 
   refresh: () => Promise<void>;
@@ -59,10 +59,10 @@ export function useCategories(): UseCategories {
   }, [refresh]);
 
   const handleCreateCategory = useCallback(
-    async (name: string, description?: string, token?: string): Promise<Category> => {
+    async (name: string, description?: string, token?: string, displayOrder?: number): Promise<Category> => {
       if (!token) throw new Error('Token required');
       try {
-        const newCategory = await createCategory(name, description, token);
+        const newCategory = await createCategory(name, description, displayOrder, token);
         // Refresh to ensure consistency
         await refresh();
         return newCategory;
@@ -98,9 +98,9 @@ export function useCategories(): UseCategories {
   );
 
   const handleCreateSubcategory = useCallback(
-    async (categoryId: number, name: string, token: string): Promise<Subcategory> => {
+    async (categoryId: number, name: string, token: string, displayOrder?: number): Promise<Subcategory> => {
       try {
-        const newSubcategory = await createSubcategory(categoryId, name, token);
+        const newSubcategory = await createSubcategory(categoryId, name, displayOrder, token);
         await refresh();
         return newSubcategory;
       } catch (err: any) {
@@ -111,9 +111,9 @@ export function useCategories(): UseCategories {
   );
 
   const handleUpdateSubcategory = useCallback(
-    async (id: number, name: string, token: string) => {
+    async (id: number, name: string, token: string, displayOrder?: number) => {
       try {
-        await updateSubcategory(id, name, token);
+        await updateSubcategory(id, name, displayOrder, token);
         await refresh();
       } catch (err: any) {
         throw new Error(err?.message || 'Failed to update subcategory');

@@ -32,6 +32,7 @@ export interface Subcategory {
   category_id: number;
   name: string;
   slug: string;
+  display_order?: number;
   created_at: string;
   updated_at: string;
 }
@@ -41,6 +42,7 @@ export interface Category {
   name: string;
   slug: string;
   description?: string;
+  display_order?: number;
   is_priority?: boolean;
   created_at: string;
   updated_at: string;

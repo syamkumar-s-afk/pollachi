@@ -159,6 +159,7 @@ export async function fetchCategories(): Promise<Category[]> {
 export async function createCategory(
   name: string,
   description: string | undefined,
+  displayOrder: number | undefined,
   token: string
 ): Promise<Category> {
   return request('/api/categories', {
@@ -167,13 +168,13 @@ export async function createCategory(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ name, description }),
+    body: JSON.stringify({ name, description, display_order: displayOrder }),
   });
 }
 
 export async function updateCategory(
   id: number,
-  updates: Partial<{ name: string; description: string; is_priority: boolean }>,
+  updates: Partial<{ name: string; description: string; is_priority: boolean; display_order: number }>,
   token: string
 ): Promise<void> {
   await request(`/api/categories/${id}`, {
@@ -216,6 +217,7 @@ export async function deleteCategory(
 export async function createSubcategory(
   categoryId: number,
   name: string,
+  displayOrder: number | undefined,
   token: string
 ): Promise<Subcategory> {
   return request(`/api/categories/${categoryId}/subcategories`, {
@@ -224,13 +226,14 @@ export async function createSubcategory(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, display_order: displayOrder }),
   });
 }
 
 export async function updateSubcategory(
   id: number,
   name: string,
+  displayOrder: number | undefined,
   token: string
 ): Promise<void> {
   await request(`/api/subcategories/${id}`, {
@@ -239,7 +242,7 @@ export async function updateSubcategory(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, display_order: displayOrder }),
   });
 }
 

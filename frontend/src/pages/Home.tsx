@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   Search,
   ChevronLeft,
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useBusinesses } from '../hooks/useBusinesses';
 import { CITIES, API_URL } from '../constants';
-import type { Business } from '../types';
+import type { Business, Category } from '../types';
 import { useCategories } from '../hooks/useCategories';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { useBanners } from '../hooks/useBanners';
@@ -105,6 +105,69 @@ const BANNER_FALLBACKS: Record<string, { src: string; alt: string }> = {
   banner5: { src: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1600&q=80', alt: 'Business network' },
 };
 
+/* ─── Helper function to group businesses by category and sort by category & subcategory serial numbers ─── */
+function groupAndSortBusinessesByCategory(
+  businesses: Business[],
+  categories: Category[]
+): { category: Category; businesses: Business[] }[] {
+  // Create a map of category names to categories (with serial numbers)
+  const categoryMap = new Map(categories.map(cat => [cat.name, cat]));
+
+  // Create a map of subcategory names to their display_order for quick lookup
+  const subcategoryOrderMap = new Map<string, number>();
+  categories.forEach(cat => {
+    if (cat.subcategories) {
+      cat.subcategories.forEach(subcat => {
+        const key = `${cat.name}::${subcat.name}`; // Compound key to avoid conflicts
+        subcategoryOrderMap.set(key, subcat.display_order ?? 999);
+      });
+    }
+  });
+
+  // Group businesses by category
+  const grouped = new Map<string, Business[]>();
+  businesses.forEach(biz => {
+    if (!grouped.has(biz.category)) {
+      grouped.set(biz.category, []);
+    }
+    grouped.get(biz.category)!.push(biz);
+  });
+
+  // Convert to array, sort categories by serial number, and sort businesses within each category by subcategory serial number
+  const result = Array.from(grouped.entries())
+    .map(([categoryName, businessList]) => {
+      const category = categoryMap.get(categoryName) || {
+        id: 0,
+        name: categoryName,
+        slug: '',
+        display_order: 999, // Default for uncategorized
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Sort businesses within this category by subcategory display_order
+      const sortedBusinesses = businessList.sort((a, b) => {
+        const keyA = `${a.category}::${a.sub_category}`;
+        const keyB = `${b.category}::${b.sub_category}`;
+        const orderA = subcategoryOrderMap.get(keyA) ?? 999;
+        const orderB = subcategoryOrderMap.get(keyB) ?? 999;
+        return orderA - orderB;
+      });
+
+      return {
+        category,
+        businesses: sortedBusinesses,
+      };
+    })
+    .sort((a, b) => {
+      const orderA = a.category.display_order ?? 999;
+      const orderB = b.category.display_order ?? 999;
+      return orderA - orderB;
+    });
+
+  return result;
+}
+
 export default function Home() {
   // Filter states
   const [city, setCity] = useState('');
@@ -136,6 +199,12 @@ export default function Home() {
 
   const { ads } = useAdvertisements();
   const { banners } = useBanners();
+
+  // Group and sort businesses by category serial number
+  const groupedBusinesses = useMemo(
+    () => groupAndSortBusinessesByCategory(businesses, dynamicCategories),
+    [businesses, dynamicCategories]
+  );
 
   // Build dynamic slide list: merge DB banners with fallbacks
   const bannerSlides = ['banner1', 'banner2', 'banner3', 'banner4', 'banner5'].map((slot) => {
@@ -436,24 +505,25 @@ export default function Home() {
             </p>
           )}
 
-          {/* Business Cards — horizontal list layout with ad in 2nd slot */}
+          {/* Business Cards — flat 2-column grid, continuous flow across all categories */}
           {!loading && !error && businesses.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {businesses.map((biz, index) => {
+              {/* Flatten all businesses from all groups into a single array */}
+              {groupedBusinesses.flatMap((group) => group.businesses).map((biz, index) => {
                 const items = [];
 
-                {/* Insert ad banner in the 2nd slot (index 1) */}
+                // Insert inline ad at position 1 (2nd slot, index 1)
                 if (index === 1) {
                   const inlineAd = ads.find(a => a.slot === 'inline-ad');
                   const hasImage = inlineAd?.image_url && inlineAd.image_url.trim() !== '';
                   const displayUrl = hasImage && inlineAd?.image_url ? (inlineAd.image_url.startsWith('/uploads') ? `${API_URL}${inlineAd.image_url}` : inlineAd.image_url) : null;
-                  
+
                   if (displayUrl) {
                     items.push(
                       <a
                         key="inline-ad"
-                        href={inlineAd?.link_url || '#'} 
-                        target="_blank" 
+                        href={inlineAd?.link_url || '#'}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="bg-white border border-[var(--color-border)] overflow-hidden h-[130px] block"
                       >

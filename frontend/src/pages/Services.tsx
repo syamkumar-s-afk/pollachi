@@ -111,7 +111,7 @@ export default function Services() {
         </h2>
         <div className="space-y-4 sm:space-y-5 text-[var(--color-text-secondary)] leading-relaxed">
           <p className="text-sm sm:text-base">
-            <strong>Trusted Directory:</strong> Access verified business information from a curated directory of businesses across Tamil Nadu's 38 districts.
+            <strong>Trusted Directory:</strong> Access verified business information from a curated directory of businesses in Kodumudi.
           </p>
           <p className="text-sm sm:text-base">
             <strong>Smart Search:</strong> Find exactly what you're looking for with advanced filters by category, location, ratings, and reviews.

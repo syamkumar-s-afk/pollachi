@@ -74,7 +74,6 @@ export default function Admin() {
   const [form, setForm] = useState<BusinessForm>({ ...EMPTY_FORM });
   const [file, setFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isCustomCity, setIsCustomCity] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Delete confirmation state
@@ -221,9 +220,6 @@ export default function Admin() {
 
   const editBusiness = (b: Business) => {
     setForm({ ...b });
-    setIsCustomCity(
-      b.city ? !CITIES.includes(b.city as typeof CITIES[number]) : false
-    );
     setFile(null);
     setErrors({});
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -231,7 +227,6 @@ export default function Admin() {
 
   const resetForm = () => {
     setForm({ ...EMPTY_FORM });
-    setIsCustomCity(false);
     setFile(null);
     setImagePreview(null);
     setErrors({});
@@ -432,15 +427,9 @@ export default function Admin() {
                     </label>
                     <select
                       id="biz-city"
-                      value={isCustomCity ? 'Others' : form.city}
+                      value={form.city}
                       onChange={(e) => {
-                        if (e.target.value === 'Others') {
-                          setIsCustomCity(true);
-                          setForm({ ...form, city: '' });
-                        } else {
-                          setIsCustomCity(false);
-                          setForm({ ...form, city: e.target.value });
-                        }
+                        setForm({ ...form, city: e.target.value });
                       }}
                       className={inputClass('city') + ' cursor-pointer'}
                     >
@@ -450,16 +439,7 @@ export default function Admin() {
                           {c}
                         </option>
                       ))}
-                      <option value="Others">Others</option>
                     </select>
-                    {isCustomCity && (
-                      <input
-                        placeholder="Custom city name"
-                        value={form.city}
-                        onChange={(e) => setForm({ ...form, city: e.target.value })}
-                        className={inputClass('city') + ' mt-2'}
-                      />
-                    )}
                     {errors.city && <p className="text-xs text-red-500 mt-1">{errors.city}</p>}
                   </div>
 

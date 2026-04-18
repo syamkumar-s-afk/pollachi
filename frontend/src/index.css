@@ -299,4 +299,26 @@ html {
 
 .add-biz-field-enter {
   animation: addBizFieldEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+/* ───────────── Mobile Filter Dropdowns Optimization ───────────── */
+
+/* Mobile view: Increase dropdown height and label text size by 2px */
+@media (max-width: 640px) {
+  #hero-city,
+  #hero-category,
+  #hero-subcategory {
+    /* Increase height by 2px - from p-2 (8px) to p-[10px] (10px) */
+    padding-top: 10px;
+    padding-bottom: 10px;
+    /* Increase label/text size by 2px - from text-[11px] to text-[13px] */
+    font-size: 13px;
+  }
+
+  /* Reduce option font size by 2px - from 11px to 9px for better balance */
+  #hero-city option,
+  #hero-category option,
+  #hero-subcategory option {
+    font-size: 9px;
+  }
+}
 }

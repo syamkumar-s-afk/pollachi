@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   SearchX,
   ChevronLeft,
@@ -15,6 +15,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import BusinessCard from '../components/BusinessCard';
 import CategoryMarquee from '../components/CategoryMarquee';
+import type { Business } from '../types';
 import { getSharedBusinessId, clearSharedBusinessParam, fetchBusinessById } from '../utils/shareUtils';
 
 export default function Listings() {
@@ -30,7 +31,7 @@ export default function Listings() {
     searchParams.get('sub_category') || ''
   );
   const [sharedBusinessId, setSharedBusinessId] = useState<number | null>(null);
-  const sharedBusinessRef = useRef<HTMLDivElement>(null);
+  const [sharedBusiness, setSharedBusiness] = useState<Business | null>(null);
 
   const { categories: dynamicCategories } = useCategories();
   const categoryNames = dynamicCategories.map(c => c.name);
@@ -72,6 +73,7 @@ export default function Listings() {
         if (sharedBiz) {
           // If business found, set it and fetch with high limit
           setSharedBusinessId(bizId);
+          setSharedBusiness(sharedBiz);
           // Fetch page 1 with high limit (100) to ensure shared business is loaded
           fetchPage(1, 100);
         } else {
@@ -85,6 +87,11 @@ export default function Listings() {
       fetchPage(1);
     }
   }, [location.search]);
+
+  let finalBusinesses = [...businesses];
+  if (sharedBusiness && !finalBusinesses.some(b => b.id === sharedBusiness.id)) {
+    finalBusinesses = [sharedBusiness, ...finalBusinesses];
+  }
 
   // Fetch on mount and when filters change directly (not via URL)
   useEffect(() => {
@@ -106,15 +113,18 @@ export default function Listings() {
 
   // Scroll to and highlight shared business when loaded
   useEffect(() => {
-    if (sharedBusinessId && !loading && sharedBusinessRef.current) {
+    if (sharedBusinessId && !loading) {
       const timer = setTimeout(() => {
-        sharedBusinessRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Remove the param from URL after handling it
-        clearSharedBusinessParam();
-      }, 100);
+        const el = document.getElementById(`business-card-${sharedBusinessId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Remove the param from URL after handling it
+          clearSharedBusinessParam();
+        }
+      }, 300);
       return () => clearTimeout(timer);
     }
-  }, [sharedBusinessId, loading]);
+  }, [sharedBusinessId, loading, finalBusinesses]);
 
   const clearFilters = () => {
     setCity('');
@@ -278,7 +288,7 @@ export default function Listings() {
           )}
 
           {/* Empty State */}
-          {!loading && !error && businesses.length === 0 && (
+          {!loading && !error && finalBusinesses.length === 0 && (
             <div className="bg-white p-12 text-center shadow-sm border border-[var(--color-border)] rounded-xl flex flex-col items-center justify-center">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
                 <SearchX className="w-8 h-8 text-[var(--color-text-muted)]" />
@@ -298,15 +308,15 @@ export default function Listings() {
             </div>
           )}
 
-          {!loading && !error && businesses.length > 0 && (
+          {!loading && !error && finalBusinesses.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {businesses.map((biz, index) => {
+              {finalBusinesses.map((biz, index) => {
                 const isShared = sharedBusinessId === biz.id;
                 return (
                   <div
                     key={biz.id}
-                    ref={isShared ? sharedBusinessRef : undefined}
-                    className={isShared ? 'ring-2 ring-blue-500' : ''}
+                    id={`business-card-${biz.id}`}
+                    className={isShared ? 'ring-2 ring-blue-500 shadow-lg' : ''}
                   >
                     <BusinessCard
                       business={biz}

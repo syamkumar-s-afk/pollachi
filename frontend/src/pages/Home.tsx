@@ -24,7 +24,7 @@ import { getImageUrl } from '../utils/imageUtils';
 import { getSharedBusinessId, clearSharedBusinessParam, shareBusinessCard, fetchBusinessById } from '../utils/shareUtils';
 
 /* ─── Inline horizontal card matching the reference design ─── */
-function ListingCard({ biz, index, isHighlighted, ref }: { biz: Business; index: number; isHighlighted?: boolean; ref?: React.Ref<HTMLDivElement> }) {
+function ListingCard({ biz, index, isHighlighted, id, ref }: { biz: Business; index: number; isHighlighted?: boolean; id?: string; ref?: React.Ref<HTMLDivElement> }) {
   const imageUrl = getImageUrl(biz.image);
   const [copied, setCopied] = useState(false);
 
@@ -40,6 +40,7 @@ function ListingCard({ biz, index, isHighlighted, ref }: { biz: Business; index:
 
   return (
     <div
+      id={id || `business-card-${biz.id}`}
       ref={ref}
       className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-4 flex flex-row gap-4 hover:shadow-md transition-all duration-300 group ${
         isHighlighted ? 'ring-2 ring-blue-500 shadow-lg' : ''
@@ -198,7 +199,7 @@ export default function Home() {
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
   const [sharedBusinessId, setSharedBusinessId] = useState<number | null>(null);
-  const sharedBusinessRef = useRef<HTMLDivElement>(null);
+  const [sharedBusiness, setSharedBusiness] = useState<Business | null>(null);
 
   const { categories: dynamicCategories } = useCategories();
   const categoryNames = dynamicCategories.map((c) => c.name);
@@ -227,10 +228,13 @@ export default function Home() {
   const { banners } = useBanners();
 
   // Group and sort businesses by category serial number
-  const groupedBusinesses = useMemo(
-    () => groupAndSortBusinessesByCategory(businesses, dynamicCategories),
-    [businesses, dynamicCategories]
-  );
+  const groupedBusinesses = useMemo(() => {
+    let finalBusinesses = [...businesses];
+    if (sharedBusiness && !finalBusinesses.some(b => b.id === sharedBusiness.id)) {
+      finalBusinesses = [sharedBusiness, ...finalBusinesses];
+    }
+    return groupAndSortBusinessesByCategory(finalBusinesses, dynamicCategories);
+  }, [businesses, dynamicCategories, sharedBusiness]);
 
   // Build dynamic slide list: merge DB banners with fallbacks
   const bannerSlides = ['banner1', 'banner2', 'banner3', 'banner4', 'banner5'].map((slot) => {
@@ -252,6 +256,7 @@ export default function Home() {
         if (sharedBiz) {
           // If business found, set it and fetch with high limit to ensure it's included
           setSharedBusinessId(bizId);
+          setSharedBusiness(sharedBiz);
           // Fetch page 1 with no filters and high limit (100) to ensure shared business is loaded
           // This ensures the business is in the rendered list for scrolling
           fetchPage(1, 100);
@@ -280,15 +285,18 @@ export default function Home() {
 
   // Scroll to and highlight shared business when loaded
   useEffect(() => {
-    if (sharedBusinessId && !loading && sharedBusinessRef.current) {
+    if (sharedBusinessId && !loading) {
       const timer = setTimeout(() => {
-        sharedBusinessRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Remove the param from URL after handling it
-        clearSharedBusinessParam();
-      }, 100);
+        const el = document.getElementById(`business-card-${sharedBusinessId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Remove the param from URL after handling it
+          clearSharedBusinessParam();
+        }
+      }, 300);
       return () => clearTimeout(timer);
     }
-  }, [sharedBusinessId, loading]);
+  }, [sharedBusinessId, loading, businesses]);
 
   const handleSearch = () => {
     fetchPage(1);
@@ -603,7 +611,6 @@ export default function Home() {
                     biz={biz}
                     index={index}
                     isHighlighted={isShared}
-                    ref={isShared ? sharedBusinessRef : undefined}
                   />
                 );
 

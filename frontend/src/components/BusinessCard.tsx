@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { Business } from '../types';
 import { getImageUrl } from '../utils/imageUtils';
+import { shareBusinessCard } from '../utils/shareUtils';
 
 interface BusinessCardProps {
   business: Business;
@@ -34,24 +35,11 @@ export default function BusinessCard({
   const imageUrl = getImageUrl(biz.image);
 
   const handleShare = async () => {
-    const shareData = {
-      title: biz.name,
-      text: `Check out ${biz.name} in ${biz.city} on KodumudiNews!`,
-      url: window.location.href,
-    };
-
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(
-          `${shareData.text} ${shareData.url}`
-        );
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }
-    } catch {
-      // User cancelled share dialog
+    const success = await shareBusinessCard(biz);
+    if (success && !navigator.canShare) {
+      // Show feedback only for clipboard copy (native share doesn't need it)
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 

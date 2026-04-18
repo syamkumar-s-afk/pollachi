@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   SearchX,
   ChevronLeft,
@@ -15,6 +15,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import BusinessCard from '../components/BusinessCard';
 import CategoryMarquee from '../components/CategoryMarquee';
+import { getSharedBusinessId, clearSharedBusinessParam } from '../utils/shareUtils';
 
 export default function Listings() {
   const location = useLocation();
@@ -28,6 +29,8 @@ export default function Listings() {
   const [subCategory, setSubCategory] = useState(
     searchParams.get('sub_category') || ''
   );
+  const [sharedBusinessId, setSharedBusinessId] = useState<number | null>(null);
+  const sharedBusinessRef = useRef<HTMLDivElement>(null);
 
   const { categories: dynamicCategories } = useCategories();
   const categoryNames = dynamicCategories.map(c => c.name);
@@ -60,6 +63,12 @@ export default function Listings() {
     setCity(params.get('city') || '');
     setCategory(params.get('category') || '');
     setSubCategory(params.get('sub_category') || '');
+
+    // Check if a business is being shared
+    const bizId = getSharedBusinessId();
+    if (bizId) {
+      setSharedBusinessId(bizId);
+    }
   }, [location.search]);
 
   // Fetch on mount and when filters change via URL
@@ -77,6 +86,18 @@ export default function Listings() {
       setSubCategory('');
     }
   }, [category]);
+
+  // Scroll to and highlight shared business when loaded
+  useEffect(() => {
+    if (sharedBusinessId && !loading && sharedBusinessRef.current) {
+      const timer = setTimeout(() => {
+        sharedBusinessRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Remove the param from URL after handling it
+        clearSharedBusinessParam();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [sharedBusinessId, loading]);
 
   const clearFilters = () => {
     setCity('');
@@ -262,14 +283,22 @@ export default function Listings() {
 
           {!loading && !error && businesses.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {businesses.map((biz, index) => (
-                <BusinessCard
-                  key={biz.id}
-                  business={biz}
-                  index={index}
-                  variant="list"
-                />
-              ))}
+              {businesses.map((biz, index) => {
+                const isShared = sharedBusinessId === biz.id;
+                return (
+                  <div
+                    key={biz.id}
+                    ref={isShared ? sharedBusinessRef : undefined}
+                    className={isShared ? 'ring-2 ring-blue-500' : ''}
+                  >
+                    <BusinessCard
+                      business={biz}
+                      index={index}
+                      variant="list"
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
 

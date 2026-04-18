@@ -11,6 +11,7 @@ import {
   Phone,
   MessageCircle,
   ImagePlus,
+  Check,
 } from 'lucide-react';
 import { useBusinesses } from '../hooks/useBusinesses';
 import { CITIES, API_URL } from '../constants';
@@ -20,16 +21,29 @@ import { useAdvertisements } from '../hooks/useAdvertisements';
 import { useBanners } from '../hooks/useBanners';
 import CategoryMarquee from '../components/CategoryMarquee';
 import { getImageUrl } from '../utils/imageUtils';
+import { getSharedBusinessId, clearSharedBusinessParam, shareBusinessCard } from '../utils/shareUtils';
 
 /* ─── Inline horizontal card matching the reference design ─── */
-function ListingCard({ biz, index }: { biz: Business; index: number }) {
+function ListingCard({ biz, index, isHighlighted, ref }: { biz: Business; index: number; isHighlighted?: boolean; ref?: React.Ref<HTMLDivElement> }) {
   const imageUrl = getImageUrl(biz.image);
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const success = await shareBusinessCard(biz);
+    if (success && !navigator.canShare) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const delayClass = `card-delay-${Math.min(index, 19)}`;
 
   return (
     <div
-      className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-4 flex flex-row gap-4 hover:shadow-md transition-all duration-300 group`}
+      ref={ref}
+      className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-4 flex flex-row gap-4 hover:shadow-md transition-all duration-300 group ${
+        isHighlighted ? 'ring-2 ring-blue-500 shadow-lg' : ''
+      }`}
     >
       {/* Thumbnail */}
       <div className="w-[88px] h-[100px] md:w-[98px] md:h-[103px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100">
@@ -84,11 +98,21 @@ function ListingCard({ biz, index }: { biz: Business; index: number }) {
             Whatsapp
           </a>
           <button
-            className="inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer ml-1"
-            aria-label={`Share ${biz.name}`}
+            onClick={handleShare}
+            className={`inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer ml-1 transition-colors ${
+              copied ? 'text-emerald-600' : ''
+            }`}
+            aria-label={copied ? 'Link copied' : `Share ${biz.name}`}
           >
-            <Share2 className="w-3 h-3" />
-            
+            {copied ? (
+              <>
+                <Check className="w-3 h-3" /> Copied!
+              </>
+            ) : (
+              <>
+                <Share2 className="w-3 h-3" />
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -173,6 +197,8 @@ export default function Home() {
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
+  const [sharedBusinessId, setSharedBusinessId] = useState<number | null>(null);
+  const sharedBusinessRef = useRef<HTMLDivElement>(null);
 
   const { categories: dynamicCategories } = useCategories();
   const categoryNames = dynamicCategories.map((c) => c.name);
@@ -218,6 +244,11 @@ export default function Home() {
 
   useEffect(() => {
     fetchPage(1);
+    // Check if a business is being shared
+    const bizId = getSharedBusinessId();
+    if (bizId) {
+      setSharedBusinessId(bizId);
+    }
   }, []);
 
   // Reset sub-category when category changes and it's no longer valid
@@ -230,6 +261,18 @@ export default function Home() {
       setSubCategory('');
     }
   }, [category]);
+
+  // Scroll to and highlight shared business when loaded
+  useEffect(() => {
+    if (sharedBusinessId && !loading && sharedBusinessRef.current) {
+      const timer = setTimeout(() => {
+        sharedBusinessRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Remove the param from URL after handling it
+        clearSharedBusinessParam();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [sharedBusinessId, loading]);
 
   const handleSearch = () => {
     fetchPage(1);
@@ -537,8 +580,15 @@ export default function Home() {
                   }
                 }
 
+                const isShared = sharedBusinessId === biz.id;
                 items.push(
-                  <ListingCard key={biz.id} biz={biz} index={index} />
+                  <ListingCard
+                    key={biz.id}
+                    biz={biz}
+                    index={index}
+                    isHighlighted={isShared}
+                    ref={isShared ? sharedBusinessRef : undefined}
+                  />
                 );
 
                 return items;

@@ -24,7 +24,7 @@ export interface UseBusinessesReturn {
   totalItems: number;
   startItem: number;
   endItem: number;
-  fetchPage: (page?: number) => Promise<void>;
+  fetchPage: (page?: number, limit?: number) => Promise<void>;
   goToPage: (page: number) => void;
   retry: () => void;
   listingsRef: React.RefObject<HTMLDivElement | null>;
@@ -45,7 +45,7 @@ export function useBusinesses(
   const lastPageRef = useRef(1);
 
   const fetchPage = useCallback(
-    async (page = 1) => {
+    async (page = 1, limit?: number) => {
       setLoading(true);
       setError(null);
       lastPageRef.current = page;
@@ -56,7 +56,7 @@ export function useBusinesses(
           category,
           subCategory,
           page,
-          limit: ITEMS_PER_PAGE,
+          limit: limit ?? ITEMS_PER_PAGE,
         });
 
         setBusinesses(result.businesses);

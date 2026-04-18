@@ -21,7 +21,7 @@ import { useAdvertisements } from '../hooks/useAdvertisements';
 import { useBanners } from '../hooks/useBanners';
 import CategoryMarquee from '../components/CategoryMarquee';
 import { getImageUrl } from '../utils/imageUtils';
-import { getSharedBusinessId, clearSharedBusinessParam, shareBusinessCard } from '../utils/shareUtils';
+import { getSharedBusinessId, clearSharedBusinessParam, shareBusinessCard, fetchBusinessById } from '../utils/shareUtils';
 
 /* ─── Inline horizontal card matching the reference design ─── */
 function ListingCard({ biz, index, isHighlighted, ref }: { biz: Business; index: number; isHighlighted?: boolean; ref?: React.Ref<HTMLDivElement> }) {
@@ -243,11 +243,27 @@ export default function Home() {
   });
 
   useEffect(() => {
-    fetchPage(1);
     // Check if a business is being shared
     const bizId = getSharedBusinessId();
+
     if (bizId) {
-      setSharedBusinessId(bizId);
+      // Fetch the shared business first to verify it exists
+      fetchBusinessById(bizId).then((sharedBiz) => {
+        if (sharedBiz) {
+          // If business found, set it and fetch with high limit to ensure it's included
+          setSharedBusinessId(bizId);
+          // Fetch page 1 with no filters and high limit (100) to ensure shared business is loaded
+          // This ensures the business is in the rendered list for scrolling
+          fetchPage(1, 100);
+        } else {
+          // Business not found, just load normally
+          console.warn(`Shared business ${bizId} not found`);
+          fetchPage(1);
+        }
+      });
+    } else {
+      // No shared business, normal load
+      fetchPage(1);
     }
   }, []);
 

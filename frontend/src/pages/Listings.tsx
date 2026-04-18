@@ -15,7 +15,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import BusinessCard from '../components/BusinessCard';
 import CategoryMarquee from '../components/CategoryMarquee';
-import { getSharedBusinessId, clearSharedBusinessParam } from '../utils/shareUtils';
+import { getSharedBusinessId, clearSharedBusinessParam, fetchBusinessById } from '../utils/shareUtils';
 
 export default function Listings() {
   const location = useLocation();
@@ -57,7 +57,7 @@ export default function Listings() {
 
   const { ads } = useAdvertisements();
 
-  // Keep state in sync if URL changes
+  // Keep state in sync if URL changes and handle shared business
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     setCity(params.get('city') || '');
@@ -67,13 +67,30 @@ export default function Listings() {
     // Check if a business is being shared
     const bizId = getSharedBusinessId();
     if (bizId) {
-      setSharedBusinessId(bizId);
+      // Fetch the shared business first to verify it exists
+      fetchBusinessById(bizId).then((sharedBiz) => {
+        if (sharedBiz) {
+          // If business found, set it and fetch with high limit
+          setSharedBusinessId(bizId);
+          // Fetch page 1 with high limit (100) to ensure shared business is loaded
+          fetchPage(1, 100);
+        } else {
+          // Business not found, just load normally
+          console.warn(`Shared business ${bizId} not found`);
+          fetchPage(1);
+        }
+      });
+    } else {
+      // No shared business, normal load
+      fetchPage(1);
     }
   }, [location.search]);
 
-  // Fetch on mount and when filters change via URL
+  // Fetch on mount and when filters change directly (not via URL)
   useEffect(() => {
-    fetchPage(1);
+    if (!getSharedBusinessId()) {
+      fetchPage(1);
+    }
   }, [fetchPage]);
 
   // Reset sub-category when category changes and it's no longer valid

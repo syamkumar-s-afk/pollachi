@@ -125,6 +125,31 @@ app.get('/api/businesses', async (req, res) => {
   });
 });
 
+// GET a single business by ID (public)
+app.get('/api/businesses/:id', async (req, res) => {
+  try {
+    const db = await getDb();
+    const businessId = parseInt(req.params.id, 10);
+
+    if (!businessId || isNaN(businessId)) {
+      return res.status(400).json({ error: 'Invalid business ID' });
+    }
+
+    const result = await db.query(
+      'SELECT * FROM businesses WHERE id = $1',
+      [businessId]
+    );
+
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({ error: 'Business not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch business' });
+  }
+});
+
 // Admin Routes for Businesses
 app.post('/api/businesses', auth, upload.single('imageFile'), async (req, res) => {
   const db = await getDb();

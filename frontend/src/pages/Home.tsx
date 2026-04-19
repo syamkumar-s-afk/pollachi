@@ -20,6 +20,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { useBanners } from '../hooks/useBanners';
 import CategoryMarquee from '../components/CategoryMarquee';
+import ImagePreviewModal from '../components/ImagePreviewModal';
 import { getImageUrl } from '../utils/imageUtils';
 import { getSharedBusinessId, clearSharedBusinessParam, shareBusinessCard, fetchBusinessById } from '../utils/shareUtils';
 
@@ -27,6 +28,7 @@ import { getSharedBusinessId, clearSharedBusinessParam, shareBusinessCard, fetch
 function ListingCard({ biz, index, isHighlighted, id, ref }: { biz: Business; index: number; isHighlighted?: boolean; id?: string; ref?: React.Ref<HTMLDivElement> }) {
   const imageUrl = getImageUrl(biz.image);
   const [copied, setCopied] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   const handleShare = async () => {
     const success = await shareBusinessCard(biz);
@@ -39,85 +41,103 @@ function ListingCard({ biz, index, isHighlighted, id, ref }: { biz: Business; in
   const delayClass = `card-delay-${Math.min(index, 19)}`;
 
   return (
-    <div
-      id={id || `business-card-${biz.id}`}
-      ref={ref}
-      className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-4 flex flex-row gap-4 hover:shadow-md transition-all duration-300 group ${
-        isHighlighted ? 'ring-2 ring-blue-500 shadow-lg' : ''
-      }`}
-    >
-      {/* Thumbnail */}
-      <div className="w-[88px] h-[100px] md:w-[98px] md:h-[103px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100">
-        <img
-          src={imageUrl}
-          alt={biz.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.src = 'https://placehold.co/400x300?text=No+Image';
-          }}
-        />
+    <>
+      <div
+        id={id || `business-card-${biz.id}`}
+        ref={ref}
+        className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-4 flex flex-row gap-4 hover:shadow-md transition-all duration-300 group ${
+          isHighlighted ? 'ring-2 ring-blue-500 shadow-lg' : ''
+        }`}
+      >
+        {/* Thumbnail */}
+        <div
+          className="w-[88px] h-[100px] md:w-[98px] md:h-[103px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => setShowImageModal(true)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter') setShowImageModal(true); }}
+          aria-label={`View ${biz.name} image`}
+        >
+          <img
+            src={imageUrl}
+            alt={biz.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.src = 'https://placehold.co/400x300?text=No+Image';
+            }}
+          />
+        </div>
+
+        {/* Content */}
+        <div className="flex flex-col flex-grow min-w-0">
+          <h3 className="text-[18px] font-bold text-[var(--color-primary)] m-0 line-clamp-1 leading-tight">
+            {biz.name}
+          </h3>
+
+          <div className="mt-1 flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
+            <BookOpen className="w-3 h-3 flex-shrink-0 text-[var(--color-text-muted)]" />
+            <span className="line-clamp-1 font-medium">
+              {biz.category}, {biz.sub_category}
+            </span>
+          </div>
+
+          <div className="mt-2 flex items-start gap-2.5 text-[13px] text-[var(--color-text-secondary)]">
+            <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-[var(--color-text-muted)] mt-0.5" />
+            <span className="line-clamp-3 leading-relaxed font-medium break-words">
+              {biz.address}
+            </span>
+          </div>
+
+          <div className="mt-auto pt-0.5 flex flex-wrap items-center gap-1.5">
+            <a
+              href={`tel:${biz.phone}`}
+              className="inline-flex items-center gap-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[13px] font-bold py-1 px-3 transition-colors"
+              aria-label={`Call ${biz.name}`}
+            >
+              <Phone className="w-3 h-3" />
+              Mobile
+            </a>
+            <a
+              href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-hover)] text-white text-[13px] font-bold py-1 px-3 transition-colors"
+              aria-label={`WhatsApp ${biz.name}`}
+            >
+              <MessageCircle className="w-3 h-3" />
+              Whatsapp
+            </a>
+            <button
+              onClick={handleShare}
+              className={`inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer ml-1 transition-colors ${
+                copied ? 'text-emerald-600' : ''
+              }`}
+              aria-label={copied ? 'Link copied' : `Share ${biz.name}`}
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3 h-3" /> Copied!
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3 h-3" />
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="flex flex-col flex-grow min-w-0">
-        <h3 className="text-[18px] font-bold text-[var(--color-primary)] m-0 line-clamp-1 leading-tight">
-          {biz.name}
-        </h3>
-
-        <div className="mt-1 flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
-          <BookOpen className="w-3 h-3 flex-shrink-0 text-[var(--color-text-muted)]" />
-          <span className="line-clamp-1 font-medium">
-            {biz.category}, {biz.sub_category}
-          </span>
-        </div>
-
-        <div className="mt-2 flex items-start gap-2.5 text-[13px] text-[var(--color-text-secondary)]">
-          <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-[var(--color-text-muted)] mt-0.5" />
-          <span className="line-clamp-3 leading-relaxed font-medium break-words">
-            {biz.address}
-          </span>
-        </div>
-
-        <div className="mt-auto pt-0.5 flex flex-wrap items-center gap-1.5">
-          <a
-            href={`tel:${biz.phone}`}
-            className="inline-flex items-center gap-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[13px] font-bold py-1 px-3 transition-colors"
-            aria-label={`Call ${biz.name}`}
-          >
-            <Phone className="w-3 h-3" />
-            Mobile
-          </a>
-          <a
-            href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-hover)] text-white text-[13px] font-bold py-1 px-3 transition-colors"
-            aria-label={`WhatsApp ${biz.name}`}
-          >
-            <MessageCircle className="w-3 h-3" />
-            Whatsapp
-          </a>
-          <button
-            onClick={handleShare}
-            className={`inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer ml-1 transition-colors ${
-              copied ? 'text-emerald-600' : ''
-            }`}
-            aria-label={copied ? 'Link copied' : `Share ${biz.name}`}
-          >
-            {copied ? (
-              <>
-                <Check className="w-3 h-3" /> Copied!
-              </>
-            ) : (
-              <>
-                <Share2 className="w-3 h-3" />
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        isOpen={showImageModal}
+        onClose={() => setShowImageModal(false)}
+        imageUrl={imageUrl}
+        businessName={biz.name}
+        category={biz.category}
+      />
+    </>
   );
 }
 
@@ -442,14 +462,14 @@ export default function Home() {
         </div>
 
         {/* Right: Filters inline */}
-        <div className="flex flex-row w-full sm:w-auto gap-1.5 sm:gap-2 md:max-w-3xl overflow-x-auto pb-1 sm:pb-0">
-          <div className="flex-1 min-w-[80px]">
+        <div className="flex flex-row w-full sm:w-auto gap-2 md:gap-3 md:max-w-3xl">
+          <div className="flex-1 min-w-[70px]">
             <label htmlFor="hero-city" className="sr-only">Select district</label>
             <select
               id="hero-city"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-[11px] sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2 sm:p-2.5 transition-colors cursor-pointer"
+              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3.5 py-2.5 transition-all duration-200 cursor-pointer rounded-lg hover:border-[var(--color-primary)] shadow-sm"
             >
               <option value="">City</option>
               {CITIES.map((d) => (
@@ -457,13 +477,13 @@ export default function Home() {
               ))}
             </select>
           </div>
-          <div className="flex-1 min-w-[90px]">
+          <div className="flex-1 min-w-[75px]">
             <label htmlFor="hero-category" className="sr-only">Select category</label>
             <select
               id="hero-category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-[11px] sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2 sm:p-2.5 transition-colors cursor-pointer"
+              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3.5 py-2.5 transition-all duration-200 cursor-pointer rounded-lg hover:border-[var(--color-primary)] shadow-sm"
             >
               <option value="">Category</option>
               {categoryNames.map((c) => (
@@ -471,13 +491,13 @@ export default function Home() {
               ))}
             </select>
           </div>
-          <div className="flex-1 min-w-[95px]">
+          <div className="flex-1 min-w-[80px]">
             <label htmlFor="hero-subcategory" className="sr-only">Select sub-category</label>
             <select
               id="hero-subcategory"
               value={subCategory}
               onChange={(e) => setSubCategory(e.target.value)}
-              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-[11px] sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2 sm:p-2.5 transition-colors cursor-pointer"
+              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3.5 py-2.5 transition-all duration-200 cursor-pointer rounded-lg hover:border-[var(--color-primary)] shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={
                 !!category &&
                 (!categoryMap[category] ||
@@ -495,10 +515,10 @@ export default function Home() {
           </div>
           <button
             onClick={handleSearch}
-            className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white p-2 px-3 sm:p-2.5 sm:px-4 flex items-center justify-center shrink-0 transition-colors cursor-pointer rounded-r-none sm:rounded-none"
+            className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white flex items-center justify-center px-3 sm:px-5 py-2.5 transition-all duration-200 cursor-pointer rounded-lg shadow-sm hover:shadow-md active:scale-95 font-medium shrink-0"
             aria-label="Search businesses"
           >
-            <Search className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Search className="w-4 sm:w-5 h-4 sm:h-5" />
           </button>
         </div>
       </div>

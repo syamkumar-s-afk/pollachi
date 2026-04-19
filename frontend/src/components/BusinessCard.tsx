@@ -6,11 +6,11 @@ import {
   Phone,
   MessageCircle,
   Check,
-  X,
 } from 'lucide-react';
 import type { Business } from '../types';
 import { getImageUrl } from '../utils/imageUtils';
 import { shareBusinessCard } from '../utils/shareUtils';
+import ImagePreviewModal from './ImagePreviewModal';
 
 interface BusinessCardProps {
   business: Business;
@@ -136,43 +136,13 @@ export default function BusinessCard({
       </article>
 
       {/* Image Preview Modal */}
-      {showImageModal && (
-        <div
-          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
-          onClick={() => setShowImageModal(false)}
-        >
-          <div
-            className="relative max-w-2xl w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => setShowImageModal(false)}
-              className="absolute -top-10 right-0 text-white hover:bg-white/20 rounded-full p-2 transition-colors md:-top-12 md:-right-12"
-              aria-label="Close image preview"
-            >
-              <X className="w-6 h-6 md:w-8 md:h-8" />
-            </button>
-
-            {/* Image */}
-            <img
-              src={imageUrl}
-              alt={`${biz.name} preview`}
-              className="w-full h-auto rounded-lg shadow-2xl"
-              onError={(e) => {
-                e.currentTarget.src =
-                  'https://placehold.co/800x600?text=No+Image';
-              }}
-            />
-
-            {/* Image Info */}
-            <div className="mt-4 text-center text-white">
-              <p className="text-sm md:text-base font-medium">{biz.name}</p>
-              <p className="text-xs md:text-sm text-gray-300">{biz.category}</p>
-            </div>
-          </div>
-        </div>
-      )}
+      <ImagePreviewModal
+        isOpen={showImageModal}
+        onClose={() => setShowImageModal(false)}
+        imageUrl={imageUrl}
+        businessName={biz.name}
+        category={biz.category}
+      />
     </>
     );
   }
@@ -266,43 +236,13 @@ export default function BusinessCard({
     </article>
 
     {/* Image Preview Modal */}
-    {showImageModal && (
-      <div
-        className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
-        onClick={() => setShowImageModal(false)}
-      >
-        <div
-          className="relative max-w-2xl w-full"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Close Button */}
-          <button
-            onClick={() => setShowImageModal(false)}
-            className="absolute -top-10 right-0 text-white hover:bg-white/20 rounded-full p-2 transition-colors md:-top-12 md:-right-12"
-            aria-label="Close image preview"
-          >
-            <X className="w-6 h-6 md:w-8 md:h-8" />
-          </button>
-
-          {/* Image */}
-          <img
-            src={imageUrl}
-            alt={`${biz.name} preview`}
-            className="w-full h-auto rounded-lg shadow-2xl"
-            onError={(e) => {
-              e.currentTarget.src =
-                'https://placehold.co/800x600?text=No+Image';
-            }}
-          />
-
-          {/* Image Info */}
-          <div className="mt-4 text-center text-white">
-            <p className="text-sm md:text-base font-medium">{biz.name}</p>
-            <p className="text-xs md:text-sm text-gray-300">{biz.category}</p>
-          </div>
-        </div>
-      </div>
-    )}
+    <ImagePreviewModal
+      isOpen={showImageModal}
+      onClose={() => setShowImageModal(false)}
+      imageUrl={imageUrl}
+      businessName={biz.name}
+      category={biz.category}
+    />
     </>
   );
 }

@@ -410,6 +410,7 @@ export default function Home() {
             </div>
             <button
               onClick={handleSearch}
+              id="hero-search"
               className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white flex items-center justify-center px-3 sm:px-4 py-2 transition-all duration-200 cursor-pointer rounded-md shadow-sm hover:shadow-md active:scale-95 font-medium shrink-0"
               aria-label="Search businesses"
             >

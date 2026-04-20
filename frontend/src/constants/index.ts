@@ -8,7 +8,6 @@
 
 export const CITIES = [
   'Kodumudi',
-  'Erode',
   'Sivagiri'
 
 ] as const;

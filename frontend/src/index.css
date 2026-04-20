@@ -315,6 +315,12 @@ html {
     font-size: 13px;
   }
 
+  /* Search button: align icon perfectly with dropdowns + 2px extra height */
+  #hero-search {
+    padding-top: 11px;
+    padding-bottom: 11px;
+  }
+
   /* Reduce option font size by 2px - from 11px to 9px for better balance */
   #hero-city option,
   #hero-category option,

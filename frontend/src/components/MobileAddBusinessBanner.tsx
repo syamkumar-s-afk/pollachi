@@ -11,7 +11,7 @@ export default function MobileAddBusinessBanner() {
     <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary)]/80 px-3 py-3 z-40 shadow-lg">
       <div className="flex flex-col items-center gap-2">
         <div className="text-center">
-          <p className="text-white text-lg font-medium">உங்கள் வியாபார தகவல்</p>
+          <p className="text-white text-lg font-medium">உங்கள் வியாபார தகவல் இடம் பெற..</p>
          
         </div>
         <button

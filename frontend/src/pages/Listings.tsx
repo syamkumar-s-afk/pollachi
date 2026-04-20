@@ -379,7 +379,7 @@ export default function Listings() {
         </div>
 
         {/* Sidebar */}
-        <div className="hidden md:flex flex-col gap-2 md:-mt-11">
+        <div className="hidden md:flex flex-col gap-2 md:mt-0">
           {['listing-ad1', 'listing-ad2', 'listing-ad3'].map((slot, idx) => {
             const adData = ads.find(a => a.slot === slot);
             const hasImage = adData?.image_url && adData.image_url.trim() !== '';

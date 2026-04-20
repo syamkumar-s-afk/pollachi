@@ -5,13 +5,7 @@ import {
   ChevronRight,
   RefreshCw,
   AlertCircle,
-  Share2,
-  MapPin,
-  BookOpen,
-  Phone,
-  MessageCircle,
   ImagePlus,
-  Check,
 } from 'lucide-react';
 import { useBusinesses } from '../hooks/useBusinesses';
 import { useAdminSettings } from '../hooks/useAdminSettings';
@@ -21,128 +15,11 @@ import { useCategories } from '../hooks/useCategories';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import { useBanners } from '../hooks/useBanners';
 import CategoryMarquee from '../components/CategoryMarquee';
-import ImagePreviewModal from '../components/ImagePreviewModal';
+import BusinessCard from '../components/BusinessCard';
 import { getImageUrl } from '../utils/imageUtils';
-import { getSharedBusinessId, clearSharedBusinessParam, shareBusinessCard, fetchBusinessById } from '../utils/shareUtils';
+import { getSharedBusinessId, clearSharedBusinessParam, fetchBusinessById } from '../utils/shareUtils';
 
-/* ─── Inline horizontal card matching the reference design ─── */
-function ListingCard({ biz, index, isHighlighted, id, ref }: { biz: Business; index: number; isHighlighted?: boolean; id?: string; ref?: React.Ref<HTMLDivElement> }) {
-  const imageUrl = getImageUrl(biz.image);
-  const [copied, setCopied] = useState(false);
-  const [showImageModal, setShowImageModal] = useState(false);
-
-  const handleShare = async () => {
-    const success = await shareBusinessCard(biz);
-    if (success && !navigator.canShare) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const delayClass = `card-delay-${Math.min(index, 19)}`;
-
-  return (
-    <>
-      <div
-        id={id || `business-card-${biz.id}`}
-        ref={ref}
-        className={`card-animate ${delayClass} bg-white border border-[var(--color-border)] p-4 flex flex-row gap-4 hover:shadow-md transition-all duration-300 group ${
-          isHighlighted ? 'ring-2 ring-blue-500 shadow-lg' : ''
-        }`}
-      >
-        {/* Thumbnail */}
-        <div
-          className="w-[88px] h-[100px] md:w-[98px] md:h-[103px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-100 cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => setShowImageModal(true)}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter') setShowImageModal(true); }}
-          aria-label={`View ${biz.name} image`}
-        >
-          <img
-            src={imageUrl}
-            alt={biz.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
-            onError={(e) => {
-              e.currentTarget.src = 'https://placehold.co/400x300?text=No+Image';
-            }}
-          />
-        </div>
-
-        {/* Content */}
-        <div className="flex flex-col flex-grow min-w-0">
-          <h3 className="text-[18px] font-bold text-[var(--color-primary)] m-0 line-clamp-1 leading-tight">
-            {biz.name}
-          </h3>
-
-          <div className="mt-1 flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
-            <BookOpen className="w-3 h-3 flex-shrink-0 text-[var(--color-text-muted)]" />
-            <span className="line-clamp-1 font-medium">
-              {biz.category}, {biz.sub_category}
-            </span>
-          </div>
-
-          <div className="mt-2 flex items-start gap-2.5 text-[13px] text-[var(--color-text-secondary)]">
-            <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-[var(--color-text-muted)] mt-0.5" />
-            <span className="line-clamp-3 leading-relaxed font-medium break-words">
-              {biz.address}
-            </span>
-          </div>
-
-          <div className="mt-auto pt-0.5 flex flex-wrap items-center gap-1.5">
-            <a
-              href={`tel:${biz.phone}`}
-              className="inline-flex items-center gap-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-[13px] font-bold py-1 px-3 transition-colors"
-              aria-label={`Call ${biz.name}`}
-            >
-              <Phone className="w-3 h-3" />
-              Mobile
-            </a>
-            <a
-              href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-hover)] text-white text-[13px] font-bold py-1 px-3 transition-colors"
-              aria-label={`WhatsApp ${biz.name}`}
-            >
-              <MessageCircle className="w-3 h-3" />
-              Whatsapp
-            </a>
-            <button
-              onClick={handleShare}
-              className={`inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer ml-1 transition-colors ${
-                copied ? 'text-emerald-600' : ''
-              }`}
-              aria-label={copied ? 'Link copied' : `Share ${biz.name}`}
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3 h-3" /> Copied!
-                </>
-              ) : (
-                <>
-                  <Share2 className="w-3 h-3" />
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Image Preview Modal */}
-      <ImagePreviewModal
-        isOpen={showImageModal}
-        onClose={() => setShowImageModal(false)}
-        imageUrl={imageUrl}
-        businessName={biz.name}
-        category={biz.category}
-      />
-    </>
-  );
-}
-
-/* ─── Fallback banner images (used when a slot has no upload) ─── */
+/* ─── Helper function to group businesses by category and sort by category & subcategory serial numbers ─── */
 const BANNER_FALLBACKS: Record<string, { src: string; alt: string }> = {
   banner1: { src: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1600&q=80', alt: 'Business meeting' },
   banner2: { src: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1600&q=80', alt: 'Modern office' },
@@ -473,11 +350,9 @@ export default function Home() {
         <div className="flex-shrink-0">
 
           <h1 className="text-lg md:text-xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-tight">
-            Explore Business Around Me
+            சமீபத்தில் பதிவு செய்யப்பட்டவை
           </h1>
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
-            Online business directory and local search platform.
-          </p>
+         
         </div>
 
         {/* Right: Filters inline with border container */}
@@ -489,7 +364,7 @@ export default function Home() {
                 id="hero-city"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="border-2 border-gray-300 bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3 py-2 transition-all duration-200 cursor-pointer rounded-md hover:border-[var(--color-primary)]"
+                className="border-2 border-red-500 bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3 py-2 transition-all duration-200 cursor-pointer rounded-md hover:border-[var(--color-primary)]"
               >
                 <option value="">City</option>
                 {CITIES.map((d) => (
@@ -503,9 +378,9 @@ export default function Home() {
                 id="hero-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="border-2 border-gray-300 bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3 py-2 transition-all duration-200 cursor-pointer rounded-md hover:border-[var(--color-primary)]"
+                className="border-2 border-red-500 bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3 py-2 transition-all duration-200 cursor-pointer rounded-md hover:border-[var(--color-primary)]"
               >
-                <option value=""> Category</option>
+                <option value=""> Category</option>S
                 {categoryNames.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -517,7 +392,7 @@ export default function Home() {
                 id="hero-subcategory"
                 value={subCategory}
                 onChange={(e) => setSubCategory(e.target.value)}
-                className="border-2 border-gray-300 bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3 py-2 transition-all duration-200 cursor-pointer rounded-md hover:border-[var(--color-primary)] disabled:opacity-60 disabled:cursor-not-allowed"
+                className="border-2 border-red-500 bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3 py-2 transition-all duration-200 cursor-pointer rounded-md hover:border-[var(--color-primary)] disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={
                   !!category &&
                   (!categoryMap[category] ||
@@ -647,11 +522,13 @@ export default function Home() {
 
                 const isShared = sharedBusinessId === biz.id;
                 items.push(
-                  <ListingCard
+                  <BusinessCard
                     key={biz.id}
-                    biz={biz}
+                    business={biz}
                     index={index}
+                    variant="list"
                     isHighlighted={isShared}
+                    id={`business-card-${biz.id}`}
                   />
                 );
 

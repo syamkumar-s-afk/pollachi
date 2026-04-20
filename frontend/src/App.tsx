@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import MobileAddBusinessBanner from './components/MobileAddBusinessBanner';
 import SkipToContent from './components/SkipToContent';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
@@ -22,7 +23,7 @@ function App() {
           <Header />
           <main
             id="main-content"
-            className="flex-grow max-w-7xl mx-auto w-full px-2 sm:px-4 lg:px-6 py-3"
+            className="flex-grow max-w-7xl mx-auto w-full px-2 sm:px-4 lg:px-6 py-3 pb-24 md:pb-3"
           >
             <Routes>
               <Route path="/" element={<Home />} />
@@ -36,6 +37,7 @@ function App() {
             </Routes>
           </main>
           <Footer />
+          <MobileAddBusinessBanner />
         </div>
       </ToastProvider>
     </ErrorBoundary>

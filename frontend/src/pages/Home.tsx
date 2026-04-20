@@ -14,6 +14,7 @@ import {
   Check,
 } from 'lucide-react';
 import { useBusinesses } from '../hooks/useBusinesses';
+import { useAdminSettings } from '../hooks/useAdminSettings';
 import { CITIES, API_URL } from '../constants';
 import type { Business, Category } from '../types';
 import { useCategories } from '../hooks/useCategories';
@@ -229,6 +230,8 @@ export default function Home() {
   });
   const allSubCategories = Array.from(new Set(dynamicCategories.flatMap(c => c.subcategories?.map(sc => sc.name) || [])));
 
+  const { settings: adminSettings } = useAdminSettings();
+
   const {
     businesses,
     loading,
@@ -242,19 +245,35 @@ export default function Home() {
     goToPage,
     retry,
     listingsRef,
-  } = useBusinesses({ city, category, subCategory });
+  } = useBusinesses({
+    city,
+    category,
+    subCategory,
+    sort: adminSettings.businessDisplayMode === 'recently-added' ? 'desc' : 'asc',
+  });
 
   const { ads } = useAdvertisements();
   const { banners } = useBanners();
 
-  // Group and sort businesses by category serial number
+  // Group and sort businesses based on display mode
   const groupedBusinesses = useMemo(() => {
     let finalBusinesses = [...businesses];
     if (sharedBusiness && !finalBusinesses.some(b => b.id === sharedBusiness.id)) {
       finalBusinesses = [sharedBusiness, ...finalBusinesses];
     }
-    return groupAndSortBusinessesByCategory(finalBusinesses, dynamicCategories);
-  }, [businesses, dynamicCategories, sharedBusiness]);
+
+    // Apply conditional sorting based on display mode
+    if (adminSettings.businessDisplayMode === 'recently-added') {
+      // Recently Added Mode: Backend already returns DESC, just flatten into single group
+      return [{
+        category: { id: 0, name: '', slug: '', display_order: 0, created_at: '', updated_at: '' },
+        businesses: finalBusinesses
+      }];
+    } else {
+      // Category-Based Mode: Group and sort by category priority
+      return groupAndSortBusinessesByCategory(finalBusinesses, dynamicCategories);
+    }
+  }, [businesses, dynamicCategories, sharedBusiness, adminSettings.businessDisplayMode]);
 
   // Build dynamic slide list: merge DB banners with fallbacks
   const bannerSlides = ['banner1', 'banner2', 'banner3', 'banner4', 'banner5'].map((slot) => {
@@ -461,65 +480,67 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Right: Filters inline */}
-        <div className="flex flex-row w-full sm:w-auto gap-2 md:gap-3 md:max-w-3xl">
-          <div className="flex-1 min-w-[70px]">
-            <label htmlFor="hero-city" className="sr-only">Select district</label>
-            <select
-              id="hero-city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3.5 py-2.5 transition-all duration-200 cursor-pointer rounded-lg hover:border-[var(--color-primary)] shadow-sm"
+        {/* Right: Filters inline with border container */}
+        <div className="w-full sm:w-auto bg-white border-2 border-[var(--color-border)] rounded-lg p-3 md:p-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex flex-row gap-2 md:gap-3 items-end">
+            <div className="flex-1 min-w-[70px]">
+             
+              <select
+                id="hero-city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className="border-2 border-gray-300 bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3 py-2 transition-all duration-200 cursor-pointer rounded-md hover:border-[var(--color-primary)]"
+              >
+                <option value="">City</option>
+                {CITIES.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1 min-w-[75px]">
+             
+              <select
+                id="hero-category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="border-2 border-gray-300 bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3 py-2 transition-all duration-200 cursor-pointer rounded-md hover:border-[var(--color-primary)]"
+              >
+                <option value=""> Category</option>
+                {categoryNames.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1 min-w-[80px]">
+              
+              <select
+                id="hero-subcategory"
+                value={subCategory}
+                onChange={(e) => setSubCategory(e.target.value)}
+                className="border-2 border-gray-300 bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3 py-2 transition-all duration-200 cursor-pointer rounded-md hover:border-[var(--color-primary)] disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={
+                  !!category &&
+                  (!categoryMap[category] ||
+                    categoryMap[category].length === 0)
+                }
+              >
+                <option value="">Sub Category</option>
+                {(category && categoryMap[category]
+                  ? categoryMap[category]
+                  : [...allSubCategories]
+                ).map((sc) => (
+                  <option key={sc} value={sc}>{sc}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={handleSearch}
+              className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white flex items-center justify-center px-3 sm:px-4 py-2 transition-all duration-200 cursor-pointer rounded-md shadow-sm hover:shadow-md active:scale-95 font-medium shrink-0"
+              aria-label="Search businesses"
             >
-              <option value="">City</option>
-              {CITIES.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
+              <Search className="w-4 sm:w-5 h-4 sm:h-5" />
+            </button>
           </div>
-          <div className="flex-1 min-w-[75px]">
-            <label htmlFor="hero-category" className="sr-only">Select category</label>
-            <select
-              id="hero-category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3.5 py-2.5 transition-all duration-200 cursor-pointer rounded-lg hover:border-[var(--color-primary)] shadow-sm"
-            >
-              <option value="">Category</option>
-              {categoryNames.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex-1 min-w-[80px]">
-            <label htmlFor="hero-subcategory" className="sr-only">Select sub-category</label>
-            <select
-              id="hero-subcategory"
-              value={subCategory}
-              onChange={(e) => setSubCategory(e.target.value)}
-              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none block w-full px-2.5 sm:px-3.5 py-2.5 transition-all duration-200 cursor-pointer rounded-lg hover:border-[var(--color-primary)] shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-              disabled={
-                !!category &&
-                (!categoryMap[category] ||
-                  categoryMap[category].length === 0)
-              }
-            >
-              <option value="">Sub Category</option>
-              {(category && categoryMap[category]
-                ? categoryMap[category]
-                : [...allSubCategories]
-              ).map((sc) => (
-                <option key={sc} value={sc}>{sc}</option>
-              ))}
-            </select>
-          </div>
-          <button
-            onClick={handleSearch}
-            className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white flex items-center justify-center px-3 sm:px-5 py-2.5 transition-all duration-200 cursor-pointer rounded-lg shadow-sm hover:shadow-md active:scale-95 font-medium shrink-0"
-            aria-label="Search businesses"
-          >
-            <Search className="w-4 sm:w-5 h-4 sm:h-5" />
-          </button>
         </div>
       </div>
 

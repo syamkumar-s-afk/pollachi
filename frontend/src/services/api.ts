@@ -61,6 +61,7 @@ export interface FetchBusinessesParams {
   subCategory?: string;
   page?: number;
   limit?: number;
+  sort?: 'asc' | 'desc'; // Optional sort order for creation date
 }
 
 export interface FetchBusinessesResult {
@@ -73,7 +74,7 @@ export interface FetchBusinessesResult {
 export async function fetchBusinesses(
   params: FetchBusinessesParams
 ): Promise<FetchBusinessesResult> {
-  const { city, category, subCategory, page = 1, limit = 20 } = params;
+  const { city, category, subCategory, page = 1, limit = 20, sort = 'asc' } = params;
 
   const query = new URLSearchParams();
   if (city) query.append('city', city);
@@ -81,6 +82,7 @@ export async function fetchBusinesses(
   if (subCategory) query.append('sub_category', subCategory);
   query.append('page', String(page));
   query.append('limit', String(limit));
+  query.append('sort', sort);
 
   const json = await request<Business[] | PaginatedResponse>(
     `/api/businesses?${query.toString()}`

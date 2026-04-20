@@ -13,6 +13,7 @@ export interface UseBusinessesOptions {
   city: string;
   category: string;
   subCategory: string;
+  sort?: 'asc' | 'desc'; // Optional sort order for businesses by creation date
 }
 
 export interface UseBusinessesReturn {
@@ -33,7 +34,7 @@ export interface UseBusinessesReturn {
 export function useBusinesses(
   options: UseBusinessesOptions
 ): UseBusinessesReturn {
-  const { city, category, subCategory } = options;
+  const { city, category, subCategory, sort = 'asc' } = options;
 
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +58,7 @@ export function useBusinesses(
           subCategory,
           page,
           limit: limit ?? ITEMS_PER_PAGE,
+          sort,
         });
 
         setBusinesses(result.businesses);
@@ -71,7 +73,7 @@ export function useBusinesses(
         setLoading(false);
       }
     },
-    [city, category, subCategory]
+    [city, category, subCategory, sort]
   );
 
   const goToPage = useCallback(

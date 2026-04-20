@@ -93,11 +93,12 @@ const auth = (req: express.Request, res: express.Response, next: express.NextFun
 // Public Routes
 app.get('/api/businesses', async (req, res) => {
   const db = await getDb();
-  const { city, category, sub_category, page: rawPage, limit: rawLimit } = req.query;
+  const { city, category, sub_category, page: rawPage, limit: rawLimit, sort: rawSort } = req.query;
 
   const page = Math.max(1, parseInt(rawPage as string, 10) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(rawLimit as string, 10) || 20));
   const offset = (page - 1) * limit;
+  const sort = (rawSort === 'desc') ? 'DESC' : 'ASC'; // Default to ASC for backwards compatibility
 
   let whereClause = ' WHERE 1=1';
   const params: any[] = [];
@@ -112,8 +113,8 @@ app.get('/api/businesses', async (req, res) => {
   const total = parseInt(countResult.rows[0].total, 10);
   const totalPages = Math.ceil(total / limit);
 
-  // Get paginated data
-  const dataQuery = `SELECT * FROM businesses${whereClause} ORDER BY created_at ASC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+  // Get paginated data with dynamic sort order
+  const dataQuery = `SELECT * FROM businesses${whereClause} ORDER BY created_at ${sort} LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
   const result = await db.query(dataQuery, [...params, limit, offset]);
 
   res.json({
@@ -668,6 +669,53 @@ app.put('/api/banners/:slot', auth, upload.single('imageFile'), async (req, res)
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to update banner', code: 'ERROR' });
+  }
+});
+
+/* ─── Admin Settings Endpoints ─── */
+
+// GET /api/admin/settings - Get all admin settings (public)
+app.get('/api/admin/settings', async (req, res) => {
+  try {
+    const db = await getDb();
+    const result = await db.query('SELECT setting_key, setting_value FROM admin_settings');
+
+    const settings: Record<string, string> = {};
+    result.rows.forEach(row => {
+      if (row.setting_key === 'business_display_mode') {
+        settings.businessDisplayMode = row.setting_value;
+      }
+    });
+
+    res.json(settings);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch settings', code: 'ERROR' });
+  }
+});
+
+// PATCH /api/admin/settings/business-display-mode - Update business display mode (protected)
+app.patch('/api/admin/settings/business-display-mode', auth, async (req, res) => {
+  try {
+    const db = await getDb();
+    const { mode } = req.body;
+
+    if (!mode || !['category-based', 'recently-added'].includes(mode)) {
+      return res.status(400).json({ error: 'Invalid mode. Must be "category-based" or "recently-added"' });
+    }
+
+    await db.query(
+      `UPDATE admin_settings SET setting_value = $1, updated_at = NOW()
+       WHERE setting_key = 'business_display_mode'`,
+      [mode]
+    );
+
+    res.json({
+      success: true,
+      message: 'Display mode updated successfully',
+      businessDisplayMode: mode
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update display mode', code: 'ERROR' });
   }
 });
 

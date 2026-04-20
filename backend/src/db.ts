@@ -72,6 +72,13 @@ export async function getDb() {
       link_url TEXT,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS admin_settings (
+      id SERIAL PRIMARY KEY,
+      setting_key VARCHAR(100) NOT NULL UNIQUE,
+      setting_value VARCHAR(255) NOT NULL,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Add is_priority column if it doesn't exist (migration)
@@ -86,6 +93,18 @@ export async function getDb() {
     const bcrypt = require('bcrypt');
     const hash = await bcrypt.hash('admin123', 10);
     await dbInstance.query('INSERT INTO admin (username, password) VALUES ($1, $2)', ['admin', hash]);
+  }
+
+  // Initialize default admin settings
+  const settingsRes = await dbInstance.query(
+    'SELECT id FROM admin_settings WHERE setting_key = $1',
+    ['business_display_mode']
+  );
+  if (settingsRes.rowCount === 0) {
+    await dbInstance.query(
+      'INSERT INTO admin_settings (setting_key, setting_value) VALUES ($1, $2)',
+      ['business_display_mode', 'category-based']
+    );
   }
 
   // NOTE: Categories and subcategories are now managed exclusively through the admin panel.

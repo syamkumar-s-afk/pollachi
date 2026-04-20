@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Trash2, Edit2, Plus, Loader2, AlertCircle, Star } from 'lucide-react';
+import { Trash2, Edit2, Plus, Loader2, AlertCircle, Star, Radio, RadioOff } from 'lucide-react';
 import { useToast } from './Toast';
+import { useAdminSettings } from '../hooks/useAdminSettings';
 import ConfirmModal from './ConfirmModal';
 import type { Category } from '../types';
 import type { UseCategories } from '../hooks/useCategories';
@@ -16,11 +17,13 @@ type Tab = 'list' | 'create' | 'edit';
 export default function CategoryManagement({ token, categoryStore }: CategoryManagementProps) {
   const toast = useToast();
   const { categories, loading, error, createCategory, updateCategory, deleteCategory, createSubcategory, deleteSubcategory } = categoryStore;
+  const { settings: adminSettings, updateBusinessDisplayMode, loading: settingsLoading } = useAdminSettings();
 
   const [activeTab, setActiveTab] = useState<Tab>('list');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string; type: 'category' | 'subcategory' } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [togglingDisplayMode, setTogglingDisplayMode] = useState(false);
 
   // Create form state
   const [createForm, setCreateForm] = useState({ name: '', displayOrder: undefined as number | undefined });
@@ -175,6 +178,21 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
     }
   };
 
+  // ─── DISPLAY MODE HANDLERS ───
+  const handleToggleDisplayMode = async () => {
+    const newMode = adminSettings.businessDisplayMode === 'category-based' ? 'recently-added' : 'category-based';
+    setTogglingDisplayMode(true);
+    try {
+      await updateBusinessDisplayMode(newMode);
+      const modeName = newMode === 'category-based' ? 'Category-Based Ranking' : 'Recently Added';
+      toast.success('Settings updated', `Display mode changed to "${modeName}".`);
+    } catch (err: any) {
+      toast.error('Failed to update', err?.message || 'Could not update display mode.');
+    } finally {
+      setTogglingDisplayMode(false);
+    }
+  };
+
   // ─── SUBCATEGORY HANDLERS ───
   const handleAddSubcategory = async (e?: React.MouseEvent | React.FormEvent) => {
     if (e) e.preventDefault();
@@ -246,6 +264,59 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
 
   return (
     <div className="space-y-6">
+      {/* Display Settings Section */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <h3 className="font-semibold text-[var(--color-text-primary)] mb-1.5">Business Display Mode</h3>
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Control how business cards are displayed on the homepage
+            </p>
+            <div className="mt-3 flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Radio className="w-5 h-5 text-blue-600" />
+                <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                  Category-Based
+                </span>
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  {adminSettings.businessDisplayMode === 'category-based' ? '(Active)' : ''}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioOff className="w-5 h-5 text-gray-400" />
+                <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                  Recently Added
+                </span>
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  {adminSettings.businessDisplayMode === 'recently-added' ? '(Active)' : ''}
+                </span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={handleToggleDisplayMode}
+            disabled={togglingDisplayMode || settingsLoading}
+            className={`ml-6 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 whitespace-nowrap ${
+              adminSettings.businessDisplayMode === 'category-based'
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-600 text-white hover:bg-gray-700'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+            title={adminSettings.businessDisplayMode === 'category-based' ? 'Switch to Recently Added mode' : 'Switch to Category-Based mode'}
+          >
+            {togglingDisplayMode ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              <>
+                {adminSettings.businessDisplayMode === 'category-based' ? 'Switch to Recent' : 'Switch to Categories'}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Tabs */}
       <div className="flex gap-2 border-b border-[var(--color-border)]">
         {(['list', 'create', 'edit'] as const).map((tab) => (

@@ -8,9 +8,12 @@
 
 export const CITIES = [
   'Kodumudi',
+  'Erode',
+  'Sivagiri'
+
 ] as const;
 
-export const ITEMS_PER_PAGE = 20;
+export const ITEMS_PER_PAGE = 11;
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 

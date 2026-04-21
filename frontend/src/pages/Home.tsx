@@ -270,7 +270,7 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-0 pb-6">
+    <div className="space-y-0 pb-2 md:pb-6">
       {/* ─── Banner Carousel ─── */}
       <div
         ref={bannerRef}
@@ -540,7 +540,7 @@ export default function Home() {
 
           {/* Pagination */}
           {!loading && !error && totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-6">
+            <div className="mt-3 md:mt-8 flex items-center justify-center gap-6">
               <button
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 1}
@@ -611,7 +611,7 @@ export default function Home() {
       </div>
 
       {/* ─── Popular Brands Section ─── */}
-      <div className="pt-6">
+      <div className="pt-2 md:pt-6 pb-3 md:pb-6">
         <div className="text-center mb-4 relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-[var(--color-border)]" />

@@ -23,7 +23,7 @@ function App() {
           <Header />
           <main
             id="main-content"
-            className="flex-grow max-w-7xl mx-auto w-full px-2 sm:px-4 lg:px-6 py-3 pb-24 md:pb-3"
+            className="flex-grow max-w-7xl mx-auto w-full px-2 sm:px-4 lg:px-6 py-3 pb-5 md:pb-3"
           >
             <Routes>
               <Route path="/" element={<Home />} />

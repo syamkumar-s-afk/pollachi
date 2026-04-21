@@ -4,10 +4,14 @@ import { Phone, MessageCircle, MapPin, ExternalLink } from 'lucide-react';
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
+  const scrollToTop = () => {
+    window.scrollTo(0, 0);
+  };
+
   return (
     <footer className="bg-[var(--color-secondary)] text-gray-300 w-full" role="contentinfo">
       {/* Main footer content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-8">
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 md:gap-10">
           {/* About */}
           <div className="col-span-2 md:col-span-1">
@@ -38,6 +42,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/"
+                  onClick={scrollToTop}
                   className="hover:text-white transition-colors flex items-center gap-2 group"
                 >
                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -47,6 +52,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/listings"
+                  onClick={scrollToTop}
                   className="hover:text-white transition-colors flex items-center gap-2 group"
                 >
                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -56,6 +62,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/add-business"
+                  onClick={scrollToTop}
                   className="hover:text-white transition-colors flex items-center gap-2 group"
                 >
                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -74,6 +81,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/about-us"
+                  onClick={scrollToTop}
                   className="hover:text-white transition-colors flex items-center gap-2 group"
                 >
                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -83,6 +91,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/services"
+                  onClick={scrollToTop}
                   className="hover:text-white transition-colors flex items-center gap-2 group"
                 >
                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -92,6 +101,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/why-join"
+                  onClick={scrollToTop}
                   className="hover:text-white transition-colors flex items-center gap-2 group"
                 >
                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -101,6 +111,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/contact-us"
+                  onClick={scrollToTop}
                   className="hover:text-white transition-colors flex items-center gap-2 group"
                 >
                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />

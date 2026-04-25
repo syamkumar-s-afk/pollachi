@@ -74,25 +74,25 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
   const delayClass = `card-delay-${Math.min(index, 19)}`;
   const renderActions = () => (
     <div className="px-4 pb-4">
-      <div className="pt-3 border-t border-gray-200 flex flex-nowrap items-center gap-1 justify-end">
+      <div className="flex flex-nowrap items-center gap-2 border-t border-gray-200 pt-3 justify-start sm:justify-end">
         <a
           href={`tel:${biz.phone}`}
-          className="inline-flex shrink-0 items-center justify-center gap-1 rounded-md bg-red-500 px-1.5 py-1.5 text-[10px] font-bold text-white shadow-sm transition-colors hover:bg-red-600 sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
+          className="inline-flex min-w-0 flex-1 items-center justify-start gap-1 rounded-md bg-red-500 px-2.5 py-1.5 text-[10px] font-bold text-white shadow-sm transition-colors hover:bg-red-600 sm:flex-none sm:justify-center sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
           aria-label={`Call ${biz.name}`}
         >
           <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          Mobile
+          <span className="truncate">Mobile</span>
         </a>
 
         <a
           href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex shrink-0 items-center justify-center gap-1 rounded-md bg-green-500 px-1.5 py-1.5 text-[10px] font-bold text-white shadow-sm transition-colors hover:bg-green-600 sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
+          className="inline-flex min-w-0 flex-1 items-center justify-start gap-1 rounded-md bg-green-500 px-2.5 py-1.5 text-[10px] font-bold text-white shadow-sm transition-colors hover:bg-green-600 sm:flex-none sm:justify-center sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
           aria-label={`WhatsApp ${biz.name}`}
         >
           <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          WhatsApp
+          <span className="truncate">WhatsApp</span>
         </a>
 
         {mapUrl && (
@@ -100,19 +100,19 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
             href={mapUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center justify-center gap-1 rounded-md bg-blue-500 px-1.5 py-1.5 text-[10px] font-bold text-white shadow-sm transition-colors hover:bg-blue-600 sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
+            className="inline-flex min-w-0 flex-1 items-center justify-start gap-1 rounded-md bg-blue-500 px-2.5 py-1.5 text-[10px] font-bold text-white shadow-sm transition-colors hover:bg-blue-600 sm:flex-none sm:justify-center sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
             aria-label={`Open ${biz.name} location on map`}
             title="Open location"
           >
             <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            Map
+            <span className="truncate">Map</span>
           </a>
         )}
 
         <button
           type="button"
           onClick={handleShare}
-          className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2 ${
+          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2 ${
             copied
               ? 'bg-green-100 text-green-600'
               : 'text-gray-600 hover:bg-gray-100'

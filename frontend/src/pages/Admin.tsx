@@ -315,7 +315,7 @@ export default function Admin() {
     ? form.adId
       ? `Current Ad ID: ${form.adId}. Leave it as-is unless you want to replace it with a custom value.`
       : `This business does not have an Ad ID yet. Leave it blank to assign ${nextAutoAdId} automatically.`
-    : `Leave this blank to auto-generate ${nextAutoAdId}. Manual values are normalized to the AD001 format.`;
+    : `Leave this blank to auto-generate `;
 
   const businessSidebarContent = null;
 
@@ -740,42 +740,26 @@ export default function Admin() {
                 <p className="text-sm font-medium">No businesses found</p>
               </div>
             ) : (
-              <div className="grid gap-3 xl:grid-cols-2">
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
                 {sortedBusinesses.map((business) => (
                   <div
                     key={business.id}
                     className="rounded-2xl border border-[var(--color-border)] bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-gray-200">
-                        <img
-                          src={getImageUrl(business.image, 'N/A')}
-                          alt=""
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                          onError={(event) => {
-                            event.currentTarget.src = 'https://placehold.co/100x100?text=N/A';
-                          }}
-                        />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-3">
-                          <h4 className="line-clamp-1 min-w-0 flex-1 text-base font-bold text-[var(--color-text-primary)]">
-                            {business.name}
-                          </h4>
-                          <span className="flex-shrink-0 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-[var(--color-primary)]">
-                            {business.adId || 'Pending Ad ID'}
-                          </span>
-                        </div>
-                      </div>
+                    <div className="space-y-2">
+                      <h4 className="line-clamp-2 text-sm font-bold leading-tight text-[var(--color-text-primary)] sm:text-base">
+                        {business.name}
+                      </h4>
+                      <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-[var(--color-primary)]">
+                        {business.adId || 'Pending Ad ID'}
+                      </span>
                     </div>
 
                     <div className="mt-3 flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => editBusiness(business)}
-                        className="flex-1 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                        className="flex-1 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
                       >
                         Edit
                       </button>

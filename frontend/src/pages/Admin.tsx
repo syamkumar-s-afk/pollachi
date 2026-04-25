@@ -740,14 +740,14 @@ export default function Admin() {
                 <p className="text-sm font-medium">No businesses found</p>
               </div>
             ) : (
-              <div className="grid gap-4 xl:grid-cols-2">
+              <div className="grid gap-3 xl:grid-cols-2">
                 {sortedBusinesses.map((business) => (
                   <div
                     key={business.id}
-                    className="rounded-2xl border border-[var(--color-border)] bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                    className="rounded-2xl border border-[var(--color-border)] bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-gray-200">
                         <img
                           src={getImageUrl(business.image, 'N/A')}
                           alt=""
@@ -760,44 +760,29 @@ export default function Admin() {
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <h4 className="line-clamp-1 text-base font-bold text-[var(--color-text-primary)]">
-                              {business.name}
-                            </h4>
-                            <p className="mt-1 text-xs font-medium text-[var(--color-text-muted)]">
-                              {business.category} â€¢ {business.sub_category}
-                            </p>
-                          </div>
-                          <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-[var(--color-primary)]">
+                        <div className="flex items-center justify-between gap-3">
+                          <h4 className="line-clamp-1 min-w-0 flex-1 text-base font-bold text-[var(--color-text-primary)]">
+                            {business.name}
+                          </h4>
+                          <span className="flex-shrink-0 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-[var(--color-primary)]">
                             {business.adId || 'Pending Ad ID'}
                           </span>
                         </div>
-
-                        <p className="mt-3 text-sm font-medium text-[var(--color-text-secondary)]">
-                          {business.city}
-                        </p>
-                        <p className="mt-1 line-clamp-2 text-sm text-[var(--color-text-muted)]">
-                          {business.address}
-                        </p>
-                        <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-                          Phone: {business.phone} | WhatsApp: {business.whatsapp}
-                        </p>
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center gap-2">
+                    <div className="mt-3 flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => editBusiness(business)}
-                        className="flex-1 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                        className="flex-1 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
                       >
-                        Edit Business
+                        Edit
                       </button>
                       <button
                         type="button"
                         onClick={() => setDeleteTarget(business)}
-                        className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
+                        className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
                         aria-label={`Delete ${business.name}`}
                       >
                         <Trash2 className="h-4 w-4" />

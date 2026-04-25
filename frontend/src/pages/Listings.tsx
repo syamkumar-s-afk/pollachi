@@ -142,26 +142,6 @@ export default function Listings() {
     });
   };
 
-  const getPageNumbers = () => {
-    const pages: (number | '...')[] = [];
-
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i += 1) pages.push(i);
-      return pages;
-    }
-
-    pages.push(1);
-    if (currentPage > 3) pages.push('...');
-
-    const start = Math.max(2, currentPage - 1);
-    const end = Math.min(totalPages - 1, currentPage + 1);
-    for (let i = start; i <= end; i += 1) pages.push(i);
-
-    if (currentPage < totalPages - 2) pages.push('...');
-    pages.push(totalPages);
-    return pages;
-  };
-
   return (
     <div className="space-y-0 pb-6">
       {/* ─── Category Marquee ─── */}
@@ -291,48 +271,33 @@ export default function Listings() {
 
           {/* Pagination */}
           {!loading && !error && totalPages > 1 && (
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+            <div className="mt-3 md:mt-8 flex items-center justify-center gap-6">
               <button
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-white px-4 text-sm font-semibold text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                className="h-12 w-12 flex items-center justify-center rounded-full bg-white border-2 border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-[var(--color-text-secondary)] disabled:hover:border-[var(--color-border)] transition-all duration-200 shadow-sm cursor-pointer"
+                aria-label="Previous page"
               >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
+                <ChevronLeft className="w-6 h-6" />
               </button>
 
-              {getPageNumbers().map((pageNumber, index) =>
-                pageNumber === '...' ? (
-                  <span
-                    key={`ellipsis-${index}`}
-                    className="px-2 text-sm font-semibold text-[var(--color-text-muted)]"
-                  >
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={pageNumber}
-                    onClick={() => goToPage(pageNumber)}
-                    className={`h-10 min-w-10 rounded-xl border px-3 text-sm font-semibold transition-colors cursor-pointer ${currentPage === pageNumber
-                        ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white shadow-sm'
-                        : 'border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]'
-                      }`}
-                    aria-current={
-                      currentPage === pageNumber ? 'page' : undefined
-                    }
-                  >
-                    {pageNumber}
-                  </button>
-                )
-              )}
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  Page {currentPage}
+                </span>
+                <span className="text-sm text-[var(--color-text-muted)]">of</span>
+                <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  {totalPages}
+                </span>
+              </div>
 
               <button
                 onClick={() => goToPage(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-white px-4 text-sm font-semibold text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                className="h-12 w-12 flex items-center justify-center rounded-full bg-white border-2 border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-[var(--color-text-secondary)] disabled:hover:border-[var(--color-border)] transition-all duration-200 shadow-sm cursor-pointer"
+                aria-label="Next page"
               >
-                Next
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="w-6 h-6" />
               </button>
             </div>
           )}

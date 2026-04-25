@@ -19,7 +19,6 @@ import { isTokenExpired } from '../components/ProtectedRoute';
 import { CITIES, API_URL } from '../constants';
 import { useCategories } from '../hooks/useCategories';
 import type { AdminSection, Business } from '../types';
-import { getImageUrl } from '../utils/imageUtils';
 import {
   deleteBusiness as apiDeleteBusiness,
   loginAdmin,

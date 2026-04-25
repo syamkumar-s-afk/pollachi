@@ -77,10 +77,10 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
       <div className="flex flex-nowrap items-center gap-2 border-t border-gray-200 pt-3 justify-start sm:justify-end">
         <a
           href={`tel:${biz.phone}`}
-          className="inline-flex min-w-0 flex-1 items-center justify-start gap-1.5 rounded-md bg-red-500 px-2.5 py-3 text-[10px] font-extrabold text-white shadow-sm transition-colors hover:bg-red-600 sm:flex-none sm:justify-center sm:px-3 sm:py-[14px] sm:text-sm"
+          className="inline-flex h-11 min-w-0 flex-1 items-center justify-start gap-1.5 rounded-md bg-red-500 px-2.5 text-[11px] font-extrabold text-white shadow-sm transition-colors hover:bg-red-600 sm:h-12 sm:flex-none sm:justify-center sm:px-3 sm:text-sm"
           aria-label={`Call ${biz.name}`}
         >
-          <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <Phone className="h-4 w-4 sm:h-4 sm:w-4" />
           <span className="truncate">Call Us</span>
         </a>
 
@@ -88,10 +88,10 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
           href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-w-0 flex-1 items-center justify-start gap-1.5 rounded-md bg-green-500 px-2.5 py-3 text-[10px] font-extrabold text-white shadow-sm transition-colors hover:bg-green-600 sm:flex-none sm:justify-center sm:px-3 sm:py-[14px] sm:text-sm"
+          className="inline-flex h-11 min-w-0 flex-1 items-center justify-start gap-1.5 rounded-md bg-green-500 px-2.5 text-[11px] font-extrabold text-white shadow-sm transition-colors hover:bg-green-600 sm:h-12 sm:flex-none sm:justify-center sm:px-3 sm:text-sm"
           aria-label={`WhatsApp ${biz.name}`}
         >
-          <FaWhatsapp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <FaWhatsapp className="h-4 w-4 sm:h-4 sm:w-4" />
           <span className="truncate">WhatsApp</span>
         </a>
 
@@ -100,11 +100,11 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
             href={mapUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-w-0 flex-1 items-center justify-start gap-1.5 rounded-md bg-blue-500 px-2.5 py-3 text-[10px] font-extrabold text-white shadow-sm transition-colors hover:bg-blue-600 sm:flex-none sm:justify-center sm:px-3 sm:py-[14px] sm:text-sm"
+            className="inline-flex h-11 min-w-0 flex-1 items-center justify-start gap-1.5 rounded-md bg-blue-500 px-2.5 text-[11px] font-extrabold text-white shadow-sm transition-colors hover:bg-blue-600 sm:h-12 sm:flex-none sm:justify-center sm:px-3 sm:text-sm"
             aria-label={`Open ${biz.name} location on map`}
             title="Open location"
           >
-            <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <MapPin className="h-4 w-4 sm:h-4 sm:w-4" />
             <span className="truncate">Location</span>
           </a>
         )}
@@ -112,7 +112,7 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
         <button
           type="button"
           onClick={handleShare}
-          className={`inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-md transition-colors sm:h-[42px] sm:w-[42px] ${
+          className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-colors sm:h-12 sm:w-12 ${
             copied
               ? 'bg-green-100 text-green-600'
               : 'text-gray-600 hover:bg-gray-100'
@@ -121,11 +121,11 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
         >
           {copied ? (
             <>
-              <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <Check className="h-4 w-4 sm:h-4 sm:w-4" />
               <span className="hidden text-xs sm:inline">Copied</span>
             </>
           ) : (
-            <Share2 className="h-4 w-4 sm:h-5 sm:w-5" />
+            <Share2 className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
           )}
         </button>
       </div>

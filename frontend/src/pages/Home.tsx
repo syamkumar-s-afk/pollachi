@@ -99,6 +99,7 @@ export default function Home() {
   const [subCategory, setSubCategory] = useState('');
   const [sharedBusinessId, setSharedBusinessId] = useState<number | null>(null);
   const [sharedBusiness, setSharedBusiness] = useState<Business | null>(null);
+  const [hasCheckedSharedBusiness, setHasCheckedSharedBusiness] = useState(false);
 
   const { categories: dynamicCategories } = useCategories();
   const categoryNames = dynamicCategories.map((c) => c.name);
@@ -171,23 +172,37 @@ export default function Home() {
       // Fetch the shared business first to verify it exists
       fetchBusinessById(bizId).then((sharedBiz) => {
         if (sharedBiz) {
-          // If business found, set it and fetch with high limit to ensure it's included
+          // If business found, keep it available so the next fetch can include it.
           setSharedBusinessId(bizId);
           setSharedBusiness(sharedBiz);
-          // Fetch page 1 with no filters and high limit (100) to ensure shared business is loaded
-          // This ensures the business is in the rendered list for scrolling
-          fetchPage(1, 100);
         } else {
-          // Business not found, just load normally
           console.warn(`Shared business ${bizId} not found`);
-          fetchPage(1);
         }
+
+        setHasCheckedSharedBusiness(true);
       });
     } else {
-      // No shared business, normal load
-      fetchPage(1);
+      setHasCheckedSharedBusiness(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!hasCheckedSharedBusiness) {
+      return;
+    }
+
+    if (sharedBusinessId) {
+      fetchPage(1, 100);
+      return;
+    }
+
+    fetchPage(1);
+  }, [
+    adminSettings.businessDisplayMode,
+    fetchPage,
+    hasCheckedSharedBusiness,
+    sharedBusinessId,
+  ]);
 
   // Reset sub-category when category changes and it's no longer valid
   useEffect(() => {

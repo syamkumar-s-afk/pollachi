@@ -41,6 +41,9 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
   const [editingSubcat, setEditingSubcat] = useState<{ id: number; name: string; displayOrder: number | undefined } | null>(null);
   const [isUpdatingSubcat, setIsUpdatingSubcat] = useState(false);
   const [togglingPriority, setTogglingPriority] = useState<number | null>(null);
+  const currentDisplayMode = adminSettings.businessDisplayMode;
+  const nextDisplayMode =
+    currentDisplayMode === 'category-based' ? 'recently-added' : 'category-based';
 
   // ─── CREATE HANDLERS ───
   const validateCreateForm = (): boolean => {
@@ -180,11 +183,13 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
 
   // ─── DISPLAY MODE HANDLERS ───
   const handleToggleDisplayMode = async () => {
-    const newMode = adminSettings.businessDisplayMode === 'category-based' ? 'recently-added' : 'category-based';
     setTogglingDisplayMode(true);
     try {
-      await updateBusinessDisplayMode(newMode);
-      const modeName = newMode === 'category-based' ? 'Category-Based Ranking' : 'Recently Added';
+      await updateBusinessDisplayMode(nextDisplayMode);
+      const modeName =
+        nextDisplayMode === 'category-based'
+          ? 'Category-Based Ranking'
+          : 'Recently Added';
       toast.success('Settings updated', `Display mode changed to "${modeName}".`);
     } catch (err: any) {
       toast.error('Failed to update', err?.message || 'Could not update display mode.');
@@ -266,29 +271,45 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
     <div className="space-y-6">
       {/* Display Settings Section */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex-1">
             <h3 className="font-semibold text-[var(--color-text-primary)] mb-1.5">Business Display Mode</h3>
             <p className="text-sm text-[var(--color-text-secondary)]">
               Control how business cards are displayed on the homepage
             </p>
-            <div className="mt-3 flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Radio className="w-5 h-5 text-blue-600" />
-                <span className="text-sm font-medium text-[var(--color-text-primary)]">
+            <div className="mt-3 flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2 rounded-lg bg-white/60 px-3 py-2">
+                {currentDisplayMode === 'category-based' ? (
+                  <Radio className="w-5 h-5 text-blue-600" />
+                ) : (
+                  <RadioOff className="w-5 h-5 text-gray-400" />
+                )}
+                <span className={`text-sm font-medium ${
+                  currentDisplayMode === 'category-based'
+                    ? 'text-[var(--color-text-primary)]'
+                    : 'text-[var(--color-text-secondary)]'
+                }`}>
                   Category-Based
                 </span>
                 <span className="text-xs text-[var(--color-text-muted)]">
-                  {adminSettings.businessDisplayMode === 'category-based' ? '(Active)' : ''}
+                  {currentDisplayMode === 'category-based' ? '(Active)' : ''}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <RadioOff className="w-5 h-5 text-gray-400" />
-                <span className="text-sm font-medium text-[var(--color-text-primary)]">
+              <div className="flex items-center gap-2 rounded-lg bg-white/60 px-3 py-2">
+                {currentDisplayMode === 'recently-added' ? (
+                  <Radio className="w-5 h-5 text-blue-600" />
+                ) : (
+                  <RadioOff className="w-5 h-5 text-gray-400" />
+                )}
+                <span className={`text-sm font-medium ${
+                  currentDisplayMode === 'recently-added'
+                    ? 'text-[var(--color-text-primary)]'
+                    : 'text-[var(--color-text-secondary)]'
+                }`}>
                   Recently Added
                 </span>
                 <span className="text-xs text-[var(--color-text-muted)]">
-                  {adminSettings.businessDisplayMode === 'recently-added' ? '(Active)' : ''}
+                  {currentDisplayMode === 'recently-added' ? '(Active)' : ''}
                 </span>
               </div>
             </div>
@@ -296,22 +317,22 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
           <button
             onClick={handleToggleDisplayMode}
             disabled={togglingDisplayMode || settingsLoading}
-            className={`ml-6 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center gap-2 whitespace-nowrap ${
-              adminSettings.businessDisplayMode === 'category-based'
+            className={`px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
+              currentDisplayMode === 'category-based'
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
                 : 'bg-gray-600 text-white hover:bg-gray-700'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-            title={adminSettings.businessDisplayMode === 'category-based' ? 'Switch to Recently Added mode' : 'Switch to Category-Based mode'}
+            } disabled:opacity-50 disabled:cursor-not-allowed lg:ml-6`}
+            title={currentDisplayMode === 'category-based' ? 'Switch to Recently Added mode' : 'Switch to Category-Based mode'}
           >
             {togglingDisplayMode ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Updating...
+                Updating mode...
               </>
             ) : (
-              <>
-                {adminSettings.businessDisplayMode === 'category-based' ? 'Switch to Recent' : 'Switch to Categories'}
-              </>
+              nextDisplayMode === 'category-based'
+                ? 'Switch to Categories'
+                : 'Switch to Recently Added'
             )}
           </button>
         </div>

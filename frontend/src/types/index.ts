@@ -11,9 +11,18 @@ export interface Business {
   address: string;
   phone: string;
   whatsapp: string;
+  mapUrl?: string | null;
   image: string;
-  adId: string;
+  adId: string | null;
+  created_at?: string;
 }
+
+export type AdminSection =
+  | 'add-business'
+  | 'all-businesses'
+  | 'categories'
+  | 'advertisements'
+  | 'banners';
 
 export interface PaginatedResponse {
   data: Business[];

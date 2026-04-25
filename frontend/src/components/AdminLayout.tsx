@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react';
+import type { AdminSection } from '../types';
 import { useSidebarNav } from '../hooks/useSidebarNav';
 import SidebarNav from './SidebarNav';
 
 interface AdminLayoutProps {
   children: ReactNode;
-  activeSection: 'businesses' | 'categories' | 'advertisements' | 'banners';
-  onSectionChange: (section: 'businesses' | 'categories' | 'advertisements' | 'banners') => void;
+  activeSection: AdminSection;
+  onSectionChange: (section: AdminSection) => void;
   onLogout?: () => void;
+  sidebarContent?: ReactNode;
 }
 
 export default function AdminLayout({
@@ -14,6 +16,7 @@ export default function AdminLayout({
   activeSection,
   onSectionChange,
   onLogout,
+  sidebarContent,
 }: AdminLayoutProps) {
   const { isCollapsed, toggle, isMobile } = useSidebarNav();
 
@@ -40,6 +43,7 @@ export default function AdminLayout({
           onToggle={toggle}
           isMobile={isMobile}
           onLogout={onLogout}
+          sidebarContent={sidebarContent}
         />
 
         {/* Main Content */}

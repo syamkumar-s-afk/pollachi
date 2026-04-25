@@ -6,15 +6,15 @@ import {
   RefreshCw,
   AlertCircle,
   ImagePlus,
-  X,
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useBusinesses } from '../hooks/useBusinesses';
-import { CITIES, API_URL } from '../constants';
+import { API_URL } from '../constants';
 import { useCategories } from '../hooks/useCategories';
 import { useAdvertisements } from '../hooks/useAdvertisements';
 import BusinessCard from '../components/BusinessCard';
 import CategoryMarquee from '../components/CategoryMarquee';
+import BusinessFilters from '../components/BusinessFilters';
 import type { Business } from '../types';
 import { getSharedBusinessId, clearSharedBusinessParam, fetchBusinessById } from '../utils/shareUtils';
 
@@ -134,6 +134,14 @@ export default function Listings() {
 
   const activeFilterCount = [city, category, subCategory].filter(Boolean).length;
 
+  const handleSearch = () => {
+    fetchPage(1);
+    listingsRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  };
+
   const getPageNumbers = () => {
     const pages: (number | '...')[] = [];
 
@@ -160,86 +168,38 @@ export default function Listings() {
       <CategoryMarquee />
 
       {/* ─── Search / Filter Section (matching Home layout) ─── */}
-      <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4 mb-1.5">
+      <div className="mb-5 grid gap-4 xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] xl:items-end">
         {/* Left: Title */}
-        <div className="flex-shrink-0">
+        <div className="space-y-1">
 
           <h1 className="text-lg md:text-xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-tight">
             {category ? `${category} Listings` : 'Business Listings'}
           </h1>
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+          <p className="text-sm text-[var(--color-text-muted)]">
             Filter and find the best local businesses across Tamil Nadu.
           </p>
         </div>
 
-        {/* Right: Filters inline */}
-        <div className="flex flex-row w-full sm:w-auto gap-1.5 sm:gap-2 md:max-w-3xl overflow-x-auto pb-1 sm:pb-0">
-          <div className="flex-1 min-w-[80px]">
-            <label htmlFor="filter-city" className="sr-only">Select district</label>
-            <select
-              id="filter-city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-[11px] sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2 sm:p-2.5 transition-colors cursor-pointer"
-            >
-              <option value="">City</option>
-              {CITIES.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex-1 min-w-[90px]">
-            <label htmlFor="filter-category" className="sr-only">Select category</label>
-            <select
-              id="filter-category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-[11px] sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2 sm:p-2.5 transition-colors cursor-pointer"
-            >
-              <option value="">Category</option>
-              {categoryNames.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex-1 min-w-[95px]">
-            <label htmlFor="filter-subcategory" className="sr-only">Select sub-category</label>
-            <select
-              id="filter-subcategory"
-              value={subCategory}
-              onChange={(e) => setSubCategory(e.target.value)}
-              className="border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] text-[11px] sm:text-sm font-medium focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none block w-full p-2 sm:p-2.5 transition-colors cursor-pointer disabled:opacity-50 disabled:bg-gray-100"
-              disabled={
-                !!category &&
-                (!categoryMap[category] || categoryMap[category].length === 0)
-              }
-            >
-              <option value="">Sub Category</option>
-              {(category && categoryMap[category]
-                ? categoryMap[category]
-                : [...allSubCategories]
-              ).map((sc) => (
-                <option key={sc} value={sc}>{sc}</option>
-              ))}
-            </select>
-          </div>
-          {activeFilterCount > 0 && (
-            <button
-              onClick={clearFilters}
-              className="p-2 sm:p-2.5 flex items-center justify-center bg-white hover:bg-red-50 text-[var(--color-text-muted)] hover:text-red-600 border border-[var(--color-border)] hover:border-red-300 transition-colors cursor-pointer flex-shrink-0"
-              aria-label="Clear all filters"
-              title="Clear all filters"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
+        <BusinessFilters
+          city={city}
+          category={category}
+          subCategory={subCategory}
+          categoryNames={categoryNames}
+          categoryMap={categoryMap}
+          allSubCategories={allSubCategories}
+          onCityChange={setCity}
+          onCategoryChange={setCategory}
+          onSubCategoryChange={setSubCategory}
+          onSearch={handleSearch}
+          onClear={clearFilters}
+          showClearButton={activeFilterCount > 0}
+        />
       </div>
 
       {/* ─── Main Content Area ─── */}
-      <div ref={listingsRef} className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div ref={listingsRef} className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
         {/* Listings */}
-        <div className="md:col-span-3" aria-live="polite">
+        <div className="min-w-0" aria-live="polite">
           {/* Results count */}
           {!loading && !error && totalItems > 0 && (
             <p className="text-xs text-[var(--color-text-muted)] mb-3">
@@ -379,7 +339,7 @@ export default function Listings() {
         </div>
 
         {/* Sidebar */}
-        <div className="hidden md:flex flex-col gap-2 md:mt-0">
+        <div className="hidden self-start lg:sticky lg:top-24 lg:flex lg:flex-col lg:gap-3">
           {['listing-ad1', 'listing-ad2', 'listing-ad3'].map((slot, idx) => {
             const adData = ads.find(a => a.slot === slot);
             const hasImage = adData?.image_url && adData.image_url.trim() !== '';

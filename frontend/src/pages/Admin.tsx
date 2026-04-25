@@ -1,14 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Plus,
-  Pencil,
-  Trash2,
   ImagePlus,
+  Loader2,
+  Pencil,
+  Plus,
   Search,
   ShieldCheck,
-  Loader2,
+  Trash2,
   X,
-  ChevronDown,
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
@@ -19,12 +18,12 @@ import BannerManagement from '../components/BannerManagement';
 import { isTokenExpired } from '../components/ProtectedRoute';
 import { CITIES, API_URL } from '../constants';
 import { useCategories } from '../hooks/useCategories';
-import type { Business } from '../types';
+import type { AdminSection, Business } from '../types';
 import { getImageUrl } from '../utils/imageUtils';
 import {
+  deleteBusiness as apiDeleteBusiness,
   loginAdmin,
   saveBusiness,
-  deleteBusiness as apiDeleteBusiness,
 } from '../services/api';
 
 interface BusinessForm {
@@ -36,6 +35,7 @@ interface BusinessForm {
   address: string;
   phone: string;
   whatsapp: string;
+  mapUrl: string;
   adId: string;
 }
 
@@ -48,66 +48,55 @@ const EMPTY_FORM: BusinessForm = {
   address: '',
   phone: '',
   whatsapp: '',
+  mapUrl: '',
   adId: '',
 };
+
+const AD_ID_REGEX = /^AD(\d+)$/i;
+
+function getAdIdNumber(adId: string | null | undefined): number {
+  if (!adId) {
+    return 0;
+  }
+
+  const match = adId.trim().toUpperCase().match(AD_ID_REGEX);
+  if (!match) {
+    return 0;
+  }
+
+  const numericValue = parseInt(match[1], 10);
+  return Number.isFinite(numericValue) ? numericValue : 0;
+}
+
+function formatAdId(sequence: number): string {
+  return `AD${String(sequence).padStart(3, '0')}`;
+}
 
 export default function Admin() {
   const toast = useToast();
   const categoryStore = useCategories();
   const { categories, loading: categoriesLoading, subcategoriesMap } = categoryStore;
 
-  // Auth state
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // Navigation state
-  const [activeSection, setActiveSection] = useState<'businesses' | 'categories' | 'advertisements' | 'banners'>('businesses');
+  const [activeSection, setActiveSection] = useState<AdminSection>('add-business');
 
-  // Data state
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showBusinessesList, setShowBusinessesList] = useState(false);
 
-  // Form state
   const [form, setForm] = useState<BusinessForm>({ ...EMPTY_FORM });
   const [file, setFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Delete confirmation state
   const [deleteTarget, setDeleteTarget] = useState<Business | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  // Validation state
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Check token on mount
-  useEffect(() => {
-    if (token && isTokenExpired(token)) {
-      localStorage.removeItem('token');
-      setToken(null);
-      toast.warning('Session expired', 'Please log in again to continue.');
-    }
-  }, []);
-
-  useEffect(() => {
-    if (token) fetchBusinesses();
-  }, [token]);
-
-  // Image preview
-  useEffect(() => {
-    if (!file) {
-      setImagePreview(null);
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    setImagePreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
-
-  const fetchBusinesses = async () => {
+  const fetchBusinesses = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/businesses?limit=1000`);
       const json = await res.json();
@@ -115,45 +104,96 @@ export default function Admin() {
     } catch {
       toast.error('Failed to load', 'Could not fetch business listings.');
     }
-  };
+  }, [toast]);
 
-  // Filtered businesses for search
+  useEffect(() => {
+    if (token && isTokenExpired(token)) {
+      localStorage.removeItem('token');
+      setToken(null);
+      toast.warning('Session expired', 'Please log in again to continue.');
+    }
+  }, [toast, token]);
+
+  useEffect(() => {
+    if (token) {
+      void fetchBusinesses();
+    }
+  }, [fetchBusinesses, token]);
+
+  useEffect(() => {
+    if (!file) {
+      setImagePreview(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    setImagePreview(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
   const filteredBusinesses = useMemo(() => {
-    if (!searchQuery.trim()) return businesses;
-    const q = searchQuery.toLowerCase();
-    return businesses.filter(
-      (b) =>
-        b.name.toLowerCase().includes(q) ||
-        b.category.toLowerCase().includes(q) ||
-        b.city.toLowerCase().includes(q)
+    if (!searchQuery.trim()) {
+      return businesses;
+    }
+
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    return businesses.filter((business) =>
+      [
+        business.name,
+        business.category,
+        business.sub_category,
+        business.city,
+        business.address,
+        business.adId ?? '',
+      ].some((value) => value.toLowerCase().includes(normalizedQuery))
     );
   }, [businesses, searchQuery]);
 
-  // Form validation
+  const sortedBusinesses = useMemo(
+    () =>
+      [...filteredBusinesses].sort((firstBusiness, secondBusiness) => {
+        const adIdDifference =
+          getAdIdNumber(secondBusiness.adId) - getAdIdNumber(firstBusiness.adId);
+
+        if (adIdDifference !== 0) {
+          return adIdDifference;
+        }
+
+        return secondBusiness.id - firstBusiness.id;
+      }),
+    [filteredBusinesses]
+  );
+
+  const nextAutoAdId = useMemo(() => {
+    const highestAdId = businesses.reduce((currentHighest, business) => {
+      return Math.max(currentHighest, getAdIdNumber(business.adId));
+    }, 0);
+
+    return formatAdId(highestAdId + 1);
+  }, [businesses]);
+
   const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+    const nextErrors: Record<string, string> = {};
 
-    if (!form.name.trim()) newErrors.name = 'Business name is required';
-    if (!form.category.trim()) newErrors.category = 'Category is required';
-    if (!form.sub_category.trim())
-      newErrors.sub_category = 'Sub-category is required';
-    if (!form.city.trim()) newErrors.city = 'City is required';
-    if (!form.address.trim()) newErrors.address = 'Address is required';
-    if (!form.phone.trim()) newErrors.phone = 'Phone number is required';
-    else if (!/^[\d\s+\-()]{7,15}$/.test(form.phone))
-      newErrors.phone = 'Enter a valid phone number';
-    if (!form.whatsapp.trim())
-      newErrors.whatsapp = 'WhatsApp number is required';
-    else if (!/^[\d\s+\-()]{7,15}$/.test(form.whatsapp))
-      newErrors.whatsapp = 'Enter a valid WhatsApp number';
+    if (!form.name.trim()) nextErrors.name = 'Business name is required';
+    if (!form.category.trim()) nextErrors.category = 'Category is required';
+    if (!form.sub_category.trim()) nextErrors.sub_category = 'Sub-category is required';
+    if (!form.city.trim()) nextErrors.city = 'District is required';
+    if (!form.address.trim()) nextErrors.address = 'Address is required';
+    if (!form.phone.trim()) nextErrors.phone = 'Phone number is required';
+    else if (!/^[\d\s+\-()]{7,15}$/.test(form.phone)) nextErrors.phone = 'Enter a valid phone number';
+    if (!form.whatsapp.trim()) nextErrors.whatsapp = 'WhatsApp number is required';
+    else if (!/^[\d\s+\-()]{7,15}$/.test(form.whatsapp)) nextErrors.whatsapp = 'Enter a valid WhatsApp number';
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
     setLoginLoading(true);
+
     try {
       const data = await loginAdmin(username, password);
       if (data.token) {
@@ -174,17 +214,50 @@ export default function Admin() {
     toast.info('Logged out', 'You have been signed out.');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token || !validateForm()) return;
+  const resetForm = () => {
+    setForm({ ...EMPTY_FORM });
+    setFile(null);
+    setImagePreview(null);
+    setErrors({});
+  };
+
+  const editBusiness = (business: Business) => {
+    setForm({
+      id: business.id,
+      name: business.name,
+      category: business.category,
+      sub_category: business.sub_category,
+      city: business.city,
+      address: business.address,
+      phone: business.phone,
+      whatsapp: business.whatsapp,
+      mapUrl: business.mapUrl ?? '',
+      adId: business.adId ?? '',
+    });
+    setFile(null);
+    setImagePreview(null);
+    setErrors({});
+    setActiveSection('add-business');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!token || !validateForm()) {
+      return;
+    }
 
     setSaving(true);
+
     try {
       const formData = new FormData();
       Object.entries(form).forEach(([key, value]) => {
-        if (value !== null) formData.append(key, value as string);
+        formData.append(key, value);
       });
-      if (file) formData.append('imageFile', file);
+
+      if (file) {
+        formData.append('imageFile', file);
+      }
 
       await saveBusiness(formData, form.id, token);
 
@@ -194,23 +267,36 @@ export default function Admin() {
       );
 
       resetForm();
-      fetchBusinesses();
-    } catch {
-      toast.error('Save failed', 'Could not save the business. Please try again.');
+      await fetchBusinesses();
+    } catch (error) {
+      const message =
+        error && typeof error === 'object' && 'message' in error
+          ? String(error.message)
+          : 'Could not save the business. Please try again.';
+
+      toast.error('Save failed', message);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!token || !deleteTarget) return;
+    if (!token || !deleteTarget) {
+      return;
+    }
 
     setDeleting(true);
+
     try {
       await apiDeleteBusiness(deleteTarget.id, token);
+
+      if (form.id === deleteTarget.id) {
+        resetForm();
+      }
+
       toast.success('Deleted', `"${deleteTarget.name}" has been removed.`);
       setDeleteTarget(null);
-      fetchBusinesses();
+      await fetchBusinesses();
     } catch {
       toast.error('Delete failed', 'Could not remove the business.');
     } finally {
@@ -218,40 +304,33 @@ export default function Admin() {
     }
   };
 
-  const editBusiness = (b: Business) => {
-    setForm({ ...b });
-    setFile(null);
-    setErrors({});
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const resetForm = () => {
-    setForm({ ...EMPTY_FORM });
-    setFile(null);
-    setImagePreview(null);
-    setErrors({});
-  };
-
   const inputClass = (field: string) =>
-    `w-full border ${
+    `w-full rounded-xl border p-2.5 text-sm outline-none transition-colors focus:ring-2 ${
       errors[field]
-        ? 'border-red-300 bg-red-50 focus:ring-red-200 focus:border-red-400'
-        : 'border-[var(--color-border)] bg-white focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]'
-    } p-2.5 rounded-xl text-sm outline-none focus:ring-2 transition-colors`;
+        ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200'
+        : 'border-[var(--color-border)] bg-white focus:border-[var(--color-primary)] focus:ring-[var(--color-primary)]/20'
+    }`;
 
-  /* ─── Login Screen ─── */
+  const adIdHelperText = form.id
+    ? form.adId
+      ? `Current Ad ID: ${form.adId}. Leave it as-is unless you want to replace it with a custom value.`
+      : `This business does not have an Ad ID yet. Leave it blank to assign ${nextAutoAdId} automatically.`
+    : `Leave this blank to auto-generate ${nextAutoAdId}. Manual values are normalized to the AD001 format.`;
+
+  const businessSidebarContent = null;
+
   if (!token) {
     return (
-      <div className="max-w-md mx-auto mt-8 md:mt-16">
-        <div className="bg-white p-8 md:p-10 rounded-2xl shadow-lg border border-[var(--color-border)]">
-          <div className="text-center mb-8">
-            <div className="w-14 h-14 bg-[var(--color-primary)] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md">
-              <ShieldCheck className="w-7 h-7 text-white" />
+      <div className="mx-auto mt-8 max-w-md md:mt-16">
+        <div className="rounded-2xl border border-[var(--color-border)] bg-white p-8 shadow-lg md:p-10">
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--color-primary)] shadow-md">
+              <ShieldCheck className="h-7 w-7 text-white" />
             </div>
             <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">
               Admin Login
             </h2>
-            <p className="text-sm text-[var(--color-text-muted)] mt-1.5">
+            <p className="mt-1.5 text-sm text-[var(--color-text-muted)]">
               Sign in to manage your business listings
             </p>
           </div>
@@ -260,7 +339,7 @@ export default function Admin() {
             <div>
               <label
                 htmlFor="admin-username"
-                className="block text-sm font-semibold text-[var(--color-text-secondary)] mb-1.5"
+                className="mb-1.5 block text-sm font-semibold text-[var(--color-text-secondary)]"
               >
                 Username
               </label>
@@ -268,17 +347,18 @@ export default function Admin() {
                 id="admin-username"
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full border border-[var(--color-border)] rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-colors bg-gray-50 hover:bg-white"
+                onChange={(event) => setUsername(event.target.value)}
+                className="w-full rounded-xl border border-[var(--color-border)] bg-gray-50 p-3 text-sm outline-none transition-colors hover:bg-white focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
                 placeholder="Enter your username"
                 required
                 autoComplete="username"
               />
             </div>
+
             <div>
               <label
                 htmlFor="admin-password"
-                className="block text-sm font-semibold text-[var(--color-text-secondary)] mb-1.5"
+                className="mb-1.5 block text-sm font-semibold text-[var(--color-text-secondary)]"
               >
                 Password
               </label>
@@ -286,21 +366,23 @@ export default function Admin() {
                 id="admin-password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-[var(--color-border)] rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-colors bg-gray-50 hover:bg-white"
+                onChange={(event) => setPassword(event.target.value)}
+                className="w-full rounded-xl border border-[var(--color-border)] bg-gray-50 p-3 text-sm outline-none transition-colors hover:bg-white focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
                 placeholder="Enter your password"
                 required
                 autoComplete="current-password"
               />
             </div>
+
             <button
+              type="submit"
               disabled={loginLoading}
-              className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 shadow-sm hover:shadow-md cursor-pointer flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[var(--color-primary-hover)] hover:shadow-md disabled:opacity-50"
             >
               {loginLoading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Signing in…
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Signing in...
                 </>
               ) : (
                 'Sign In'
@@ -312,377 +394,431 @@ export default function Admin() {
     );
   }
 
-  /* ─── Admin Dashboard ─── */
   return (
     <AdminLayout
       activeSection={activeSection}
       onSectionChange={setActiveSection}
       onLogout={logout}
+      sidebarContent={businessSidebarContent}
     >
-      {/* Businesses Section */}
-      {activeSection === 'businesses' && (
+      {activeSection === 'add-business' && (
         <div className="space-y-6">
-          {/* Form Panel */}
-          <div className="w-full">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-[var(--color-border)]">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-bold text-lg text-[var(--color-text-primary)] flex items-center gap-2">
-                  {form.id ? (
-                    <>
-                      <Pencil className="w-5 h-5 text-[var(--color-primary)]" />
-                      Edit Business
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-5 h-5 text-[var(--color-primary)]" />
-                      Add Business
-                    </>
-                  )}
-                </h3>
-                {form.id && (
-                  <button
-                    onClick={resetForm}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 text-[var(--color-text-muted)] transition-colors cursor-pointer"
-                    aria-label="Cancel editing"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+          <div className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-sm">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-lg font-bold text-[var(--color-text-primary)]">
+                {form.id ? (
+                  <>
+                    <Pencil className="h-5 w-5 text-[var(--color-primary)]" />
+                    Edit Business
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-5 w-5 text-[var(--color-primary)]" />
+                    Add Business
+                  </>
                 )}
-              </div>
+              </h3>
 
-              <form onSubmit={handleSubmit} className="space-y-4 text-sm">
-                {/* First Row: Business Name, Category, Sub Category */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Business Name */}
-                  <div>
-                    <label htmlFor="biz-name" className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1.5">
-                      Business Name *
-                    </label>
-                    <input
-                      id="biz-name"
-                      placeholder="e.g. ABC Textiles"
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      className={inputClass('name')}
-                    />
-                    {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
-                  </div>
-
-                  {/* Category */}
-                  <div>
-                    <label htmlFor="biz-category" className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1.5">
-                      Category * {categoriesLoading && <span className="text-[10px]">(loading...)</span>}
-                    </label>
-                    <select
-                      id="biz-category"
-                      value={form.category}
-                      onChange={(e) => {
-                        setForm({ ...form, category: e.target.value, sub_category: '' });
-                      }}
-                      disabled={categoriesLoading}
-                      className={inputClass('category') + ' cursor-pointer disabled:opacity-50'}
-                    >
-                      <option value="">Select Category</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.name}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category}</p>}
-                  </div>
-
-                  {/* Sub Category */}
-                  <div>
-                    <label htmlFor="biz-subcategory" className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1.5">
-                      Sub Category *
-                    </label>
-                    <select
-                      id="biz-subcategory"
-                      value={form.sub_category}
-                      onChange={(e) => {
-                        setForm({ ...form, sub_category: e.target.value });
-                      }}
-                      disabled={!form.category || categoriesLoading}
-                      className={inputClass('sub_category') + ' cursor-pointer disabled:opacity-50'}
-                    >
-                      <option value="">Select Sub Category</option>
-                      {form.category &&
-                        subcategoriesMap[categories.find(c => c.name === form.category)?.id || 0]?.map((sc) => (
-                          <option key={sc.id} value={sc.name}>
-                            {sc.name}
-                          </option>
-                        ))}
-                    </select>
-                    {errors.sub_category && <p className="text-xs text-red-500 mt-1">{errors.sub_category}</p>}
-                  </div>
-                </div>
-
-                {/* Second Row: District, Address, Ad ID */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* City */}
-                  <div>
-                    <label htmlFor="biz-city" className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1.5">
-                      District *
-                    </label>
-                    <select
-                      id="biz-city"
-                      value={form.city}
-                      onChange={(e) => {
-                        setForm({ ...form, city: e.target.value });
-                      }}
-                      className={inputClass('city') + ' cursor-pointer'}
-                    >
-                      <option value="">Select District</option>
-                      {CITIES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.city && <p className="text-xs text-red-500 mt-1">{errors.city}</p>}
-                  </div>
-
-                  {/* Address */}
-                  <div className="md:col-span-1">
-                    <label htmlFor="biz-address" className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1.5">
-                      Address *
-                    </label>
-                    <textarea
-                      id="biz-address"
-                      placeholder="Full business address"
-                      value={form.address}
-                      onChange={(e) => setForm({ ...form, address: e.target.value })}
-                      rows={3}
-                      className={inputClass('address') + ' resize-none'}
-                    />
-                    {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
-                  </div>
-
-                  {/* Ad ID */}
-                  <div>
-                    <label htmlFor="biz-adid" className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1.5">
-                      Ad ID
-                    </label>
-                    <input
-                      id="biz-adid"
-                      placeholder="e.g. #AdSR001"
-                      value={form.adId}
-                      onChange={(e) => setForm({ ...form, adId: e.target.value })}
-                      className={inputClass('adId')}
-                    />
-                  </div>
-                </div>
-
-                {/* Third Row: Phone, WhatsApp */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Phone */}
-                  <div>
-                    <label htmlFor="biz-phone" className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1.5">
-                      Phone *
-                    </label>
-                    <input
-                      id="biz-phone"
-                      placeholder="Phone number"
-                      value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      className={inputClass('phone')}
-                    />
-                    {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
-                  </div>
-
-                  {/* WhatsApp */}
-                  <div>
-                    <label htmlFor="biz-whatsapp" className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1.5">
-                      WhatsApp *
-                    </label>
-                    <input
-                      id="biz-whatsapp"
-                      placeholder="WhatsApp number"
-                      value={form.whatsapp}
-                      onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
-                      className={inputClass('whatsapp')}
-                    />
-                    {errors.whatsapp && <p className="text-xs text-red-500 mt-1">{errors.whatsapp}</p>}
-                  </div>
-
-                  {/* Placeholder for spacing */}
-                  <div />
-                </div>
-
-                {/* Image Upload - Full Width */}
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1.5">
-                    Image
-                  </label>
-                  {imagePreview && (
-                    <div className="relative mb-2 rounded-xl overflow-hidden border border-[var(--color-border)]">
-                      <img src={imagePreview} alt="Upload preview" className="w-full h-32 object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFile(null);
-                          setImagePreview(null);
-                        }}
-                        className="absolute top-2 right-2 w-7 h-7 bg-black/50 hover:bg-black/70 text-white rounded-lg flex items-center justify-center transition-colors cursor-pointer"
-                        aria-label="Remove image"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-                  <label className="flex items-center justify-center gap-2 w-full border-2 border-dashed border-[var(--color-border)] hover:border-[var(--color-primary)] rounded-xl py-3 cursor-pointer transition-colors text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-red-50/50">
-                    <ImagePlus className="w-4 h-4" />
-                    {file ? file.name : 'Choose image…'}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setFile(e.target.files?.[0] || null)}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-
-                {/* Buttons - Full Width */}
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="flex-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 shadow-sm hover:shadow-md cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Saving…
-                      </>
-                    ) : form.id ? (
-                      'Update Business'
-                    ) : (
-                      'Add Business'
-                    )}
-                  </button>
-
-                  {form.id && (
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-[var(--color-text-secondary)] py-3 rounded-xl font-semibold text-sm transition-colors cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </form>
-            </div>
-          </div>
-
-          {/* Business List Panel */}
-          <div className="w-full">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-[var(--color-border)]">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              {form.id && (
                 <button
-                  onClick={() => setShowBusinessesList(!showBusinessesList)}
-                  className="flex items-center justify-between w-full sm:w-auto hover:opacity-80 transition-opacity cursor-pointer"
+                  type="button"
+                  onClick={resetForm}
+                  className="rounded-lg p-1.5 text-[var(--color-text-muted)] transition-colors hover:bg-gray-100"
+                  aria-label="Cancel editing"
                 >
-                  <h3 className="font-bold text-lg text-[var(--color-text-primary)]">
-                    All Businesses
-                    <span className="text-sm font-normal text-[var(--color-text-muted)] ml-2">
-                      ({filteredBusinesses.length})
-                    </span>
-                  </h3>
-                  <ChevronDown
-                    className={`w-5 h-5 text-[var(--color-text-muted)] transition-transform duration-300 ${
-                      showBusinessesList ? 'rotate-180' : ''
-                    }`}
-                  />
+                  <X className="h-4 w-4" />
                 </button>
-                {showBusinessesList && (
-                  <div className="relative w-full sm:w-64">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                    <input
-                      type="text"
-                      placeholder="Search businesses…"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 pr-4 py-2.5 border border-[var(--color-border)] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] w-full bg-gray-50 hover:bg-white transition-colors"
-                      aria-label="Search listed businesses"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {showBusinessesList && (
-                <>
-                  {filteredBusinesses.length === 0 ? (
-                    <div className="text-center py-12 text-[var(--color-text-muted)]">
-                      <Search className="w-8 h-8 mx-auto mb-3 opacity-40" />
-                      <p className="text-sm font-medium">No businesses found</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-                      {filteredBusinesses.map((b) => (
-                        <div
-                          key={b.id}
-                          className="border border-[var(--color-border)] p-3.5 flex items-center gap-3 rounded-xl bg-gray-50/50 hover:bg-white hover:shadow-sm transition-all group"
-                        >
-                          <div className="w-12 h-12 rounded-lg bg-gray-200 overflow-hidden flex-shrink-0">
-                            <img
-                              src={getImageUrl(b.image, 'N/A')}
-                              alt=""
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              onError={(e) => {
-                                e.currentTarget.src = 'https://placehold.co/100x100?text=N/A';
-                              }}
-                            />
-                          </div>
-
-                          <div className="flex-grow min-w-0">
-                            <h4 className="font-bold text-sm text-[var(--color-text-primary)] line-clamp-1">
-                              {b.name}
-                            </h4>
-                            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
-                              {b.category} · {b.sub_category} · {b.city}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => editBusiness(b)}
-                              className="p-2 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors cursor-pointer"
-                              aria-label={`Edit ${b.name}`}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setDeleteTarget(b)}
-                              className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors cursor-pointer"
-                              aria-label={`Delete ${b.name}`}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
               )}
             </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div>
+                  <label
+                    htmlFor="biz-name"
+                    className="mb-1.5 block text-xs font-semibold text-[var(--color-text-secondary)]"
+                  >
+                    Business Name *
+                  </label>
+                  <input
+                    id="biz-name"
+                    placeholder="e.g. ABC Textiles"
+                    value={form.name}
+                    onChange={(event) => setForm({ ...form, name: event.target.value })}
+                    className={inputClass('name')}
+                  />
+                  {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="biz-category"
+                    className="mb-1.5 block text-xs font-semibold text-[var(--color-text-secondary)]"
+                  >
+                    Category * {categoriesLoading && <span className="text-[10px]">(loading...)</span>}
+                  </label>
+                  <select
+                    id="biz-category"
+                    value={form.category}
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+                        category: event.target.value,
+                        sub_category: '',
+                      })
+                    }
+                    disabled={categoriesLoading}
+                    className={`${inputClass('category')} cursor-pointer disabled:opacity-50`}
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.name}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.category && <p className="mt-1 text-xs text-red-500">{errors.category}</p>}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="biz-subcategory"
+                    className="mb-1.5 block text-xs font-semibold text-[var(--color-text-secondary)]"
+                  >
+                    Sub Category *
+                  </label>
+                  <select
+                    id="biz-subcategory"
+                    value={form.sub_category}
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+                        sub_category: event.target.value,
+                      })
+                    }
+                    disabled={!form.category || categoriesLoading}
+                    className={`${inputClass('sub_category')} cursor-pointer disabled:opacity-50`}
+                  >
+                    <option value="">Select Sub Category</option>
+                    {form.category &&
+                      subcategoriesMap[categories.find((category) => category.name === form.category)?.id || 0]?.map((subcategory) => (
+                        <option key={subcategory.id} value={subcategory.name}>
+                          {subcategory.name}
+                        </option>
+                      ))}
+                  </select>
+                  {errors.sub_category && (
+                    <p className="mt-1 text-xs text-red-500">{errors.sub_category}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div>
+                  <label
+                    htmlFor="biz-city"
+                    className="mb-1.5 block text-xs font-semibold text-[var(--color-text-secondary)]"
+                  >
+                    District *
+                  </label>
+                  <select
+                    id="biz-city"
+                    value={form.city}
+                    onChange={(event) => setForm({ ...form, city: event.target.value })}
+                    className={`${inputClass('city')} cursor-pointer`}
+                  >
+                    <option value="">Select District</option>
+                    {CITIES.map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.city && <p className="mt-1 text-xs text-red-500">{errors.city}</p>}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="biz-address"
+                    className="mb-1.5 block text-xs font-semibold text-[var(--color-text-secondary)]"
+                  >
+                    Address *
+                  </label>
+                  <textarea
+                    id="biz-address"
+                    placeholder="Full business address"
+                    value={form.address}
+                    onChange={(event) => setForm({ ...form, address: event.target.value })}
+                    rows={3}
+                    className={`${inputClass('address')} resize-none`}
+                  />
+                  {errors.address && (
+                    <p className="mt-1 text-xs text-red-500">{errors.address}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="biz-adid"
+                    className="mb-1.5 block text-xs font-semibold text-[var(--color-text-secondary)]"
+                  >
+                    Ad ID
+                  </label>
+                  <input
+                    id="biz-adid"
+                    placeholder={`Leave blank for ${nextAutoAdId}`}
+                    value={form.adId}
+                    onChange={(event) => setForm({ ...form, adId: event.target.value })}
+                    className={inputClass('adId')}
+                  />
+                  <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                    {adIdHelperText}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div>
+                  <label
+                    htmlFor="biz-phone"
+                    className="mb-1.5 block text-xs font-semibold text-[var(--color-text-secondary)]"
+                  >
+                    Phone *
+                  </label>
+                  <input
+                    id="biz-phone"
+                    placeholder="Phone number"
+                    value={form.phone}
+                    onChange={(event) => setForm({ ...form, phone: event.target.value })}
+                    className={inputClass('phone')}
+                  />
+                  {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="biz-whatsapp"
+                    className="mb-1.5 block text-xs font-semibold text-[var(--color-text-secondary)]"
+                  >
+                    WhatsApp *
+                  </label>
+                  <input
+                    id="biz-whatsapp"
+                    placeholder="WhatsApp number"
+                    value={form.whatsapp}
+                    onChange={(event) => setForm({ ...form, whatsapp: event.target.value })}
+                    className={inputClass('whatsapp')}
+                  />
+                  {errors.whatsapp && (
+                    <p className="mt-1 text-xs text-red-500">{errors.whatsapp}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="biz-map-url"
+                    className="mb-1.5 block text-xs font-semibold text-[var(--color-text-secondary)]"
+                  >
+                    Map / Location URL
+                  </label>
+                  <input
+                    id="biz-map-url"
+                    type="url"
+                    placeholder="https://maps.app.goo.gl/..."
+                    value={form.mapUrl}
+                    onChange={(event) => setForm({ ...form, mapUrl: event.target.value })}
+                    className={inputClass('mapUrl')}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-[var(--color-text-secondary)]">
+                  Image
+                </label>
+
+                {imagePreview && (
+                  <div className="relative mb-2 overflow-hidden rounded-xl border border-[var(--color-border)]">
+                    <img
+                      src={imagePreview}
+                      alt="Upload preview"
+                      className="h-32 w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFile(null);
+                        setImagePreview(null);
+                      }}
+                      className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-black/50 text-white transition-colors hover:bg-black/70"
+                      aria-label="Remove image"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--color-border)] py-3 text-sm text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-primary)] hover:bg-red-50/50 hover:text-[var(--color-primary)]">
+                  <ImagePlus className="h-4 w-4" />
+                  {file ? file.name : 'Choose image...'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => setFile(event.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[var(--color-primary-hover)] hover:shadow-md disabled:opacity-50"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : form.id ? (
+                    'Update Business'
+                  ) : (
+                    'Add Business'
+                  )}
+                </button>
+
+                {form.id && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="flex-1 rounded-xl bg-gray-100 py-3 text-sm font-semibold text-[var(--color-text-secondary)] transition-colors hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Categories Section */}
-      {activeSection === 'categories' && token && <CategoryManagement token={token} categoryStore={categoryStore} />}
+      {activeSection === 'all-businesses' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-sm">
+            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
+                  All Businesses
+                </h3>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                  Browse, search, edit, and manage every business from a single workspace.
+                </p>
+              </div>
 
-      {/* Advertisements Section */}
+              <div className="relative w-full max-w-md">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
+                <input
+                  type="text"
+                  placeholder="Search by name, city, category, or Ad ID"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  className="w-full rounded-xl border border-[var(--color-border)] bg-white py-3 pl-9 pr-4 text-sm outline-none transition-colors hover:border-[var(--color-primary)]/40 focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
+                  aria-label="Search all businesses"
+                />
+              </div>
+            </div>
+
+            <div className="mb-4 rounded-2xl border border-[var(--color-border)] bg-gray-50 px-4 py-3 text-sm text-[var(--color-text-secondary)]">
+              Showing <span className="font-semibold text-[var(--color-text-primary)]">{sortedBusinesses.length}</span> of{' '}
+              <span className="font-semibold text-[var(--color-text-primary)]">{businesses.length}</span> businesses
+            </div>
+
+            {sortedBusinesses.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-gray-50 px-4 py-16 text-center text-[var(--color-text-muted)]">
+                <Search className="mx-auto mb-4 h-10 w-10 opacity-40" />
+                <p className="text-sm font-medium">No businesses found</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 xl:grid-cols-2">
+                {sortedBusinesses.map((business) => (
+                  <div
+                    key={business.id}
+                    className="rounded-2xl border border-[var(--color-border)] bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-gray-200">
+                        <img
+                          src={getImageUrl(business.image, 'N/A')}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          onError={(event) => {
+                            event.currentTarget.src = 'https://placehold.co/100x100?text=N/A';
+                          }}
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h4 className="line-clamp-1 text-base font-bold text-[var(--color-text-primary)]">
+                              {business.name}
+                            </h4>
+                            <p className="mt-1 text-xs font-medium text-[var(--color-text-muted)]">
+                              {business.category} â€¢ {business.sub_category}
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-[var(--color-primary)]">
+                            {business.adId || 'Pending Ad ID'}
+                          </span>
+                        </div>
+
+                        <p className="mt-3 text-sm font-medium text-[var(--color-text-secondary)]">
+                          {business.city}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-sm text-[var(--color-text-muted)]">
+                          {business.address}
+                        </p>
+                        <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+                          Phone: {business.phone} | WhatsApp: {business.whatsapp}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => editBusiness(business)}
+                        className="flex-1 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                      >
+                        Edit Business
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(business)}
+                        className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
+                        aria-label={`Delete ${business.name}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeSection === 'categories' && token && (
+        <CategoryManagement token={token} categoryStore={categoryStore} />
+      )}
+
       {activeSection === 'advertisements' && token && <AdvertisementManagement />}
 
-      {/* Banners Section */}
       {activeSection === 'banners' && token && <BannerManagement />}
 
-      {/* Delete Confirmation Modal */}
       <ConfirmModal
         open={!!deleteTarget}
         title="Delete Business"

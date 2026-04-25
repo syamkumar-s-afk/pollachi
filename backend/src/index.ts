@@ -8,6 +8,11 @@ import fs from 'fs';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { getDb } from './db';
+import {
+  resolveBusinessAdIdForCreate,
+  resolveBusinessAdIdForUpdate,
+  withBusinessAdIdLock,
+} from './adIds';
 import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
@@ -90,6 +95,26 @@ const auth = (req: express.Request, res: express.Response, next: express.NextFun
   }
 };
 
+const respondWithError = (
+  res: express.Response,
+  error: unknown,
+  fallbackMessage: string
+) => {
+  const apiError = error as {
+    status?: number;
+    code?: string;
+    message?: string;
+  };
+
+  return res.status(apiError.status ?? 500).json({
+    error: apiError.message || fallbackMessage,
+    code: apiError.code || 'ERROR',
+  });
+};
+
+const BUSINESS_SELECT_FIELDS =
+  'id, name, category, sub_category, city, address, phone, whatsapp, map_url AS "mapUrl", image, adid AS "adId", created_at';
+
 // Public Routes
 app.get('/api/businesses', async (req, res) => {
   const db = await getDb();
@@ -114,7 +139,7 @@ app.get('/api/businesses', async (req, res) => {
   const totalPages = Math.ceil(total / limit);
 
   // Get paginated data with dynamic sort order
-  const dataQuery = `SELECT * FROM businesses${whereClause} ORDER BY created_at ${sort} LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+  const dataQuery = `SELECT ${BUSINESS_SELECT_FIELDS} FROM businesses${whereClause} ORDER BY created_at ${sort} LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
   const result = await db.query(dataQuery, [...params, limit, offset]);
 
   res.json({
@@ -137,7 +162,7 @@ app.get('/api/businesses/:id', async (req, res) => {
     }
 
     const result = await db.query(
-      'SELECT * FROM businesses WHERE id = $1',
+      `SELECT ${BUSINESS_SELECT_FIELDS} FROM businesses WHERE id = $1`,
       [businessId]
     );
 
@@ -153,50 +178,105 @@ app.get('/api/businesses/:id', async (req, res) => {
 
 // Admin Routes for Businesses
 app.post('/api/businesses', auth, upload.single('imageFile'), async (req, res) => {
-  const db = await getDb();
-  const { name, category, sub_category, city, address, phone, whatsapp, adId } = req.body;
-  let image = req.body.image || '';
+  try {
+    const db = await getDb();
+    const { name, category, sub_category, city, address, phone, whatsapp, adId } = req.body;
+    const mapUrl = String(req.body.mapUrl ?? req.body.map_url ?? '').trim();
+    let image = req.body.image || '';
 
-  if (req.file) {
-    try {
-      image = await uploadToSupabase(req.file);
-    } catch (err: any) {
-      return res.status(500).json({ error: err.message || 'Image upload failed' });
+    if (req.file) {
+      try {
+        image = await uploadToSupabase(req.file);
+      } catch (err: any) {
+        return res.status(500).json({ error: err.message || 'Image upload failed' });
+      }
     }
-  }
 
-  const result = await db.query(
-    `INSERT INTO businesses (name, category, sub_category, city, address, phone, whatsapp, image, adId) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-    [name, category, sub_category, city, address, phone, whatsapp, image, adId]
-  );
-  res.json({ id: result.rows[0].id });
+    const result = await withBusinessAdIdLock(db, async (client) => {
+      const finalAdId = await resolveBusinessAdIdForCreate(client, adId);
+
+      return client.query(
+        `INSERT INTO businesses (name, category, sub_category, city, address, phone, whatsapp, map_url, image, adId)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         RETURNING id, adid AS "adId"`,
+        [name, category, sub_category, city, address, phone, whatsapp, mapUrl, image, finalAdId]
+      );
+    });
+
+    res.json({ id: result.rows[0].id, adId: result.rows[0].adId });
+  } catch (error) {
+    return respondWithError(res, error, 'Failed to create business.');
+  }
 });
 
 app.put('/api/businesses/:id', auth, upload.single('imageFile'), async (req, res) => {
-  const db = await getDb();
-  const { name, category, sub_category, city, address, phone, whatsapp, adId } = req.body;
-  let image = req.body.image;
+  try {
+    const db = await getDb();
+    const businessId = parseInt(String(req.params.id), 10);
 
-  if (req.file) {
-    try {
-      image = await uploadToSupabase(req.file);
-    } catch (err: any) {
-      return res.status(500).json({ error: err.message || 'Image upload failed' });
+    if (!businessId || Number.isNaN(businessId)) {
+      return res.status(400).json({ error: 'Invalid business ID', code: 'INVALID_ID' });
     }
-  }
 
-  if (req.file) {
-    await db.query(
-      `UPDATE businesses SET name=$1, category=$2, sub_category=$3, city=$4, address=$5, phone=$6, whatsapp=$7, image=$8, adId=$9 WHERE id=$10`,
-      [name, category, sub_category, city, address, phone, whatsapp, image, adId, req.params.id]
-    );
-  } else {
-    await db.query(
-      `UPDATE businesses SET name=$1, category=$2, sub_category=$3, city=$4, address=$5, phone=$6, whatsapp=$7, adId=$8 WHERE id=$9`,
-      [name, category, sub_category, city, address, phone, whatsapp, adId, req.params.id]
-    );
+    const { name, category, sub_category, city, address, phone, whatsapp, adId } = req.body;
+    let image = req.body.image;
+
+    if (req.file) {
+      try {
+        image = await uploadToSupabase(req.file);
+      } catch (err: any) {
+        return res.status(500).json({ error: err.message || 'Image upload failed' });
+      }
+    }
+
+    const result = await withBusinessAdIdLock(db, async (client) => {
+      const existingBusiness = await client.query(
+        'SELECT image, map_url FROM businesses WHERE id = $1',
+        [businessId]
+      );
+
+      if ((existingBusiness.rowCount ?? 0) === 0) {
+        throw Object.assign(new Error('Business not found.'), {
+          status: 404,
+          code: 'NOT_FOUND',
+        });
+      }
+
+      const finalAdId = await resolveBusinessAdIdForUpdate(client, businessId, adId);
+      const finalImage =
+        req.file
+          ? image
+          : req.body.image !== undefined
+            ? req.body.image
+            : (existingBusiness.rows[0]?.image ?? '');
+      const finalMapUrl =
+        req.body.mapUrl !== undefined || req.body.map_url !== undefined
+          ? String(req.body.mapUrl ?? req.body.map_url ?? '').trim()
+          : (existingBusiness.rows[0]?.map_url ?? '');
+
+      await client.query(
+        `UPDATE businesses
+         SET name = $1,
+             category = $2,
+             sub_category = $3,
+             city = $4,
+             address = $5,
+             phone = $6,
+             whatsapp = $7,
+             map_url = $8,
+             image = $9,
+             adId = $10
+         WHERE id = $11`,
+        [name, category, sub_category, city, address, phone, whatsapp, finalMapUrl, finalImage, finalAdId, businessId]
+      );
+
+      return { adId: finalAdId };
+    });
+
+    res.json({ success: true, adId: result.adId });
+  } catch (error) {
+    return respondWithError(res, error, 'Failed to update business.');
   }
-  res.json({ success: true });
 });
 
 app.delete('/api/businesses/:id', auth, async (req, res) => {

@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import { backfillBusinessAdIds } from './adIds';
 dotenv.config();
 
 let dbInstance: Pool | null = null;
@@ -24,6 +25,7 @@ export async function getDb() {
       address TEXT NOT NULL,
       phone TEXT NOT NULL,
       whatsapp TEXT NOT NULL,
+      map_url TEXT,
       image TEXT,
       adId TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -87,6 +89,11 @@ export async function getDb() {
     ADD COLUMN IF NOT EXISTS is_priority BOOLEAN DEFAULT FALSE;
   `);
 
+  await dbInstance.query(`
+    ALTER TABLE businesses
+    ADD COLUMN IF NOT EXISTS map_url TEXT;
+  `);
+
   // Insert default admin if no admin
   const adminRes = await dbInstance.query('SELECT id FROM admin WHERE username = $1', ['admin']);
   if (adminRes.rowCount === 0) {
@@ -106,6 +113,9 @@ export async function getDb() {
       ['business_display_mode', 'category-based']
     );
   }
+
+  await backfillBusinessAdIds(dbInstance);
+  console.log('[DB] Business Ad IDs synchronized');
 
   // NOTE: Categories and subcategories are now managed exclusively through the admin panel.
   // No hardcoded seeding is performed. All categories must be created via the API.

@@ -25,6 +25,21 @@ interface BusinessCardProps {
   id?: string;
 }
 
+function getSafeMapUrl(mapUrl: string | null | undefined): string {
+  if (!mapUrl?.trim()) {
+    return '';
+  }
+
+  try {
+    const parsedUrl = new URL(mapUrl.trim());
+    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
+      ? parsedUrl.toString()
+      : '';
+  } catch {
+    return '';
+  }
+}
+
 /**
  * Reusable business card component with two layout variants.
  * Includes staggered entrance animation, lazy-loaded images,
@@ -45,6 +60,7 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
     const [showImageModal, setShowImageModal] = useState(false);
 
   const imageUrl = getImageUrl(biz.image);
+  const mapUrl = getSafeMapUrl(biz.mapUrl);
 
   const handleShare = async () => {
     const success = await shareBusinessCard(biz);
@@ -56,6 +72,65 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
   };
 
   const delayClass = `card-delay-${Math.min(index, 19)}`;
+  const renderActions = () => (
+    <div className="px-4 pb-4">
+      <div className="pt-3 border-t border-gray-200 flex flex-nowrap items-center gap-1 justify-end">
+        <a
+          href={`tel:${biz.phone}`}
+          className="inline-flex shrink-0 items-center justify-center gap-1 rounded-md bg-red-500 px-1.5 py-1.5 text-[10px] font-bold text-white shadow-sm transition-colors hover:bg-red-600 sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
+          aria-label={`Call ${biz.name}`}
+        >
+          <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          Mobile
+        </a>
+
+        <a
+          href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex shrink-0 items-center justify-center gap-1 rounded-md bg-green-500 px-1.5 py-1.5 text-[10px] font-bold text-white shadow-sm transition-colors hover:bg-green-600 sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
+          aria-label={`WhatsApp ${biz.name}`}
+        >
+          <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          WhatsApp
+        </a>
+
+        {mapUrl && (
+          <a
+            href={mapUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center justify-center gap-1 rounded-md bg-blue-500 px-1.5 py-1.5 text-[10px] font-bold text-white shadow-sm transition-colors hover:bg-blue-600 sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
+            aria-label={`Open ${biz.name} location on map`}
+            title="Open location"
+          >
+            <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            Map
+          </a>
+        )}
+
+        <button
+          type="button"
+          onClick={handleShare}
+          className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2 ${
+            copied
+              ? 'bg-green-100 text-green-600'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+          aria-label={copied ? 'Link copied' : `Share ${biz.name}`}
+        >
+          {copied ? (
+            <>
+              <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden text-xs sm:inline">Copied</span>
+            </>
+          ) : (
+            <Share2 className="h-4 w-4 sm:h-5 sm:w-5" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
 
   if (variant === 'list') {
     return (
@@ -76,7 +151,7 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
           </div>
 
           {/* FLEX ROW: Image LEFT + Content RIGHT */}
-          <div className="flex flex-row gap-4 px-4 pb-4 flex-grow">
+          <div className="flex flex-row gap-4 px-4 pb-2 flex-grow">
             {/* LEFT SIDE: Image (reduced height on mobile) */}
             <div
               className="w-[85px] md:w-[100px] h-[85px] md:h-[100px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-300 rounded-md cursor-pointer hover:opacity-90 transition-opacity"
@@ -118,53 +193,9 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
                   </span>
                 </div>
               </div>
-
-              {/* BOTTOM: Action Buttons */}
-              <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-2 justify-end">
-                {/* Mobile Button */}
-                <a
-                  href={`tel:${biz.phone}`}
-                  className="inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-3 transition-colors rounded-md shadow-sm"
-                  aria-label={`Call ${biz.name}`}
-                >
-                  <Phone className="w-4 h-4" />
-                  Mobile
-                </a>
-
-                {/* WhatsApp Button */}
-                <a
-                  href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 px-3 transition-colors rounded-md shadow-sm"
-                  aria-label={`WhatsApp ${biz.name}`}
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  WhatsApp
-                </a>
-
-                {/* Share Button */}
-                <button
-                  onClick={handleShare}
-                  className={`inline-flex items-center gap-1.5 text-base font-medium py-2 px-3 transition-colors rounded-md ${
-                    copied
-                      ? 'bg-green-100 text-green-600'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                  aria-label={copied ? 'Link copied' : `Share ${biz.name}`}
-                >
-                  {copied ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span className="text-xs">Copied</span>
-                    </>
-                  ) : (
-                    <Share2 className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
             </div>
           </div>
+          {renderActions()}
         </article>
 
         {/* Image Preview Modal */}
@@ -198,7 +229,7 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
         </div>
 
         {/* FLEX ROW: Image LEFT + Content RIGHT */}
-        <div className="flex flex-row gap-4 px-4 pb-4 flex-grow">
+        <div className="flex flex-row gap-4 px-4 pb-2 flex-grow">
           {/* LEFT SIDE: Image (reduced height on mobile) */}
           <div
             className="w-[85px] md:w-[100px] h-[85px] md:h-[100px] bg-gray-100 relative overflow-hidden flex-shrink-0 border border-gray-300 rounded-md cursor-pointer hover:opacity-90 transition-opacity"
@@ -240,53 +271,9 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
                 </span>
               </div>
             </div>
-
-            {/* BOTTOM: Action Buttons */}
-            <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-2 justify-end">
-              {/* Call Button */}
-              <a
-                href={`tel:${biz.phone}`}
-                className="inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-3 transition-colors rounded-md shadow-sm"
-                aria-label={`Call ${biz.name}`}
-              >
-                <Phone className="w-4 h-4" />
-                Call
-              </a>
-
-              {/* WhatsApp Button */}
-              <a
-                href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 px-3 transition-colors rounded-md shadow-sm"
-                aria-label={`WhatsApp ${biz.name}`}
-              >
-                <MessageCircle className="w-4 h-4" />
-                WhatsApp
-              </a>
-
-              {/* Share Button */}
-              <button
-                onClick={handleShare}
-                className={`inline-flex items-center gap-1.5 text-base font-medium py-2 px-3 transition-colors rounded-md ${
-                  copied
-                    ? 'bg-green-100 text-green-600'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-                aria-label={copied ? 'Link copied' : `Share ${biz.name}`}
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span className="text-xs">Copied</span>
-                  </>
-                ) : (
-                  <Share2 className="w-5 h-5" />
-                )}
-              </button>
-            </div>
           </div>
         </div>
+        {renderActions()}
       </article>
 
       {/* Image Preview Modal */}

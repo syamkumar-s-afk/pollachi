@@ -1,13 +1,32 @@
-import { Plus, FolderOpen, Image as ImageIcon, LayoutPanelLeft, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import type { ReactNode } from 'react';
+import type { AdminSection } from '../types';
+import {
+  Briefcase,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  FolderOpen,
+  Image as ImageIcon,
+  LayoutPanelLeft,
+  List,
+  LogOut,
+  Plus,
+  X,
+} from 'lucide-react';
 
 interface SidebarNavProps {
-  activeSection: 'businesses' | 'categories' | 'advertisements' | 'banners';
-  onSectionChange: (section: 'businesses' | 'categories' | 'advertisements' | 'banners') => void;
+  activeSection: AdminSection;
+  onSectionChange: (section: AdminSection) => void;
   isCollapsed: boolean;
   onToggle: () => void;
   isMobile: boolean;
   onLogout?: () => void;
+  sidebarContent?: ReactNode;
 }
+
+const navItemClassName =
+  'w-full rounded-xl text-sm font-semibold transition-colors';
 
 export default function SidebarNav({
   activeSection,
@@ -16,20 +35,29 @@ export default function SidebarNav({
   onToggle,
   isMobile,
   onLogout,
+  sidebarContent,
 }: SidebarNavProps) {
-  const handleNavClick = (section: 'businesses' | 'categories' | 'advertisements' | 'banners') => {
+  const [isBusinessMenuOpen, setIsBusinessMenuOpen] = useState(true);
+
+  const isBusinessSection =
+    activeSection === 'add-business' || activeSection === 'all-businesses';
+
+  const handleNavClick = (section: AdminSection) => {
     onSectionChange(section);
+    if (section === 'add-business' || section === 'all-businesses') {
+      setIsBusinessMenuOpen(true);
+    }
+
     if (isMobile && !isCollapsed) {
       onToggle();
     }
   };
 
-  // Hide sidebar on mobile when collapsed (for overlay effect)
   if (isMobile && isCollapsed) {
     return null;
   }
 
-  const sidebarWidth = isMobile ? 'w-full' : isCollapsed ? 'w-20' : 'w-64';
+  const sidebarWidth = isMobile ? 'w-full' : isCollapsed ? 'w-20' : 'w-72';
   const sidebarClasses = `
     ${sidebarWidth}
     bg-white
@@ -37,111 +65,159 @@ export default function SidebarNav({
     shadow-sm
     transition-all duration-200 ease-in-out
     flex flex-col
+    overflow-y-auto
     ${isMobile ? 'fixed top-0 left-0 h-screen z-50' : 'relative'}
   `;
 
+  const renderNavButton = (
+    section: AdminSection,
+    label: string,
+    icon: ReactNode,
+    options?: {
+      nested?: boolean;
+      active?: boolean;
+    }
+  ) => {
+    const isActive = options?.active ?? activeSection === section;
+    const isNested = options?.nested ?? false;
+
+    return (
+      <button
+        type="button"
+        onClick={() => handleNavClick(section)}
+        className={`${navItemClassName} flex items-center gap-3 px-3 py-3 ${
+          isNested ? 'ml-2' : ''
+        } ${
+          isActive
+            ? 'bg-[var(--color-primary)] text-white shadow-sm'
+            : 'text-[var(--color-text-secondary)] hover:bg-gray-100'
+        }`}
+      >
+        <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center">
+          {icon}
+        </span>
+        {!isCollapsed && <span className="truncate">{label}</span>}
+      </button>
+    );
+  };
+
   return (
     <>
-      {/* Mobile overlay backdrop */}
       {isMobile && !isCollapsed && (
         <div
-          className="fixed inset-0 bg-black/30 z-40 md:hidden"
+          className="fixed inset-0 z-40 bg-black/30 md:hidden"
           onClick={onToggle}
         />
       )}
 
       <aside className={sidebarClasses}>
-        {/* Header */}
-        <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
-          {!isCollapsed && <span className="font-bold text-[var(--color-text-primary)]">Admin</span>}
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] p-4">
+          {!isCollapsed && (
+            <span className="font-bold text-[var(--color-text-primary)]">
+              Admin
+            </span>
+          )}
           {isMobile && (
             <button
+              type="button"
               onClick={onToggle}
-              className="ml-auto text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+              className="ml-auto rounded-lg p-1 text-[var(--color-text-muted)] transition-colors hover:bg-gray-100 hover:text-[var(--color-text-primary)]"
+              aria-label="Close admin menu"
             >
-              ✕
+              <X className="h-5 w-5" />
             </button>
           )}
         </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 p-3 space-y-2">
-          {/* New Business */}
-          <button
-            onClick={() => handleNavClick('businesses')}
-            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-semibold text-sm transition-colors ${
-              activeSection === 'businesses'
-                ? 'bg-[var(--color-primary)] text-white shadow-sm'
-                : 'text-[var(--color-text-secondary)] hover:bg-gray-100'
-            }`}
-          >
-            <Plus className="w-5 h-5 flex-shrink-0" />
-            {!isCollapsed && <span>New Business</span>}
-          </button>
+        <nav className="flex-1 space-y-2 p-3">
+          {isCollapsed ? (
+            <>
+              {renderNavButton('add-business', 'Add Business', <Plus className="h-5 w-5" />)}
+              {renderNavButton('all-businesses', 'All Businesses', <List className="h-5 w-5" />)}
+            </>
+          ) : (
+            <div className="rounded-2xl border border-[var(--color-border)] bg-gray-50/70 p-2">
+              <button
+                type="button"
+                onClick={() => setIsBusinessMenuOpen((current) => !current)}
+                className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-left transition-colors ${
+                  isBusinessSection
+                    ? 'bg-white text-[var(--color-text-primary)] shadow-sm'
+                    : 'text-[var(--color-text-secondary)] hover:bg-white'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Briefcase className="h-5 w-5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold">Businesses</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">
+                      Add and browse listings
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`h-4 w-4 text-[var(--color-text-muted)] transition-transform ${
+                    isBusinessMenuOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
 
-          {/* Category Management */}
-          <button
-            onClick={() => handleNavClick('categories')}
-            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-semibold text-sm transition-colors ${
-              activeSection === 'categories'
-                ? 'bg-[var(--color-primary)] text-white shadow-sm'
-                : 'text-[var(--color-text-secondary)] hover:bg-gray-100'
-            }`}
-          >
-            <FolderOpen className="w-5 h-5 flex-shrink-0" />
-            {!isCollapsed && <span>Category Management</span>}
-          </button>
+              {isBusinessMenuOpen && (
+                <div className="mt-2 space-y-2">
+                  {renderNavButton('add-business', 'Add Business', <Plus className="h-4 w-4" />, {
+                    nested: true,
+                  })}
+                  {renderNavButton(
+                    'all-businesses',
+                    'All Businesses',
+                    <List className="h-4 w-4" />,
+                    {
+                      nested: true,
+                    }
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Advertisements */}
-          <button
-            onClick={() => handleNavClick('advertisements')}
-            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-semibold text-sm transition-colors ${
-              activeSection === 'advertisements'
-                ? 'bg-[var(--color-primary)] text-white shadow-sm'
-                : 'text-[var(--color-text-secondary)] hover:bg-gray-100'
-            }`}
-          >
-            <ImageIcon className="w-5 h-5 flex-shrink-0" />
-            {!isCollapsed && <span>Advertisements</span>}
-          </button>
-
-          {/* Banners */}
-          <button
-            onClick={() => handleNavClick('banners')}
-            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-semibold text-sm transition-colors ${
-              activeSection === 'banners'
-                ? 'bg-[var(--color-primary)] text-white shadow-sm'
-                : 'text-[var(--color-text-secondary)] hover:bg-gray-100'
-            }`}
-          >
-            <LayoutPanelLeft className="w-5 h-5 flex-shrink-0" />
-            {!isCollapsed && <span>Banners</span>}
-          </button>
+          {renderNavButton('categories', 'Category Management', <FolderOpen className="h-5 w-5" />)}
+          {renderNavButton('advertisements', 'Advertisements', <ImageIcon className="h-5 w-5" />)}
+          {renderNavButton('banners', 'Banners', <LayoutPanelLeft className="h-5 w-5" />)}
         </nav>
 
-        {/* Section Info & Logout */}
-        <div className="border-t border-[var(--color-border)] p-3 space-y-3">
-         
+        {!isCollapsed && sidebarContent && (
+          <div className="border-t border-[var(--color-border)] px-3 py-3">
+            {sidebarContent}
+          </div>
+        )}
+
+        <div className="space-y-3 border-t border-[var(--color-border)] p-3">
           {onLogout && (
             <button
+              type="button"
               onClick={onLogout}
-              className="w-full flex items-center gap-2 text-xs font-semibold text-[var(--color-text-secondary)] hover:text-red-600 transition-colors px-3 py-2 rounded-xl hover:bg-red-50"
+              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-[var(--color-text-secondary)] transition-colors hover:bg-red-50 hover:text-red-600"
             >
-              <LogOut className="w-4 h-4 flex-shrink-0" />
+              <LogOut className="h-4 w-4 flex-shrink-0" />
               {!isCollapsed && <span>Sign Out</span>}
             </button>
           )}
         </div>
 
-        {/* Toggle Button (Desktop only) */}
         {!isMobile && (
           <div className="border-t border-[var(--color-border)] p-3">
             <button
+              type="button"
               onClick={onToggle}
-              className="w-full flex items-center justify-center px-3 py-2 rounded-xl text-xs font-semibold text-[var(--color-text-muted)] hover:bg-gray-100 transition-colors"
+              className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-[var(--color-text-muted)] transition-colors hover:bg-gray-100"
               title={isCollapsed ? 'Expand' : 'Collapse'}
             >
-              {isCollapsed ? '→' : '←'}
+              {isCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+              {!isCollapsed && <span>Collapse</span>}
             </button>
           </div>
         )}

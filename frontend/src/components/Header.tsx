@@ -66,6 +66,7 @@ export default function Header() {
           <div className="flex lg:hidden items-center gap-2">
             <Link
               to="/add-business"
+              onClick={() => setIsMenuOpen(false)}
               className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 hover:-translate-y-0.5 hover:shadow-md whitespace-nowrap"
               aria-label="Add Business"
             >

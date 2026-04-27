@@ -18,7 +18,7 @@ export function useBanners() {
       const res = await fetch(`${API_URL}/api/banners`);
       const json = await res.json();
       if (json.data) setBanners(json.data);
-    } catch (e) {
+    } catch {
       // fail silently — fallback images handled in component
     } finally {
       setLoading(false);

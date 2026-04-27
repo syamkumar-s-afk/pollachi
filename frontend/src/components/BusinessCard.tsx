@@ -10,6 +10,7 @@ import { FaWhatsapp } from 'react-icons/fa';
 import type { Business } from '../types';
 import { getImageUrl } from '../utils/imageUtils';
 import { shareBusinessCard } from '../utils/shareUtils';
+import { getSafeHttpUrl } from '../utils/urlUtils';
 import ImagePreviewModal from './ImagePreviewModal';
 
 interface BusinessCardProps {
@@ -23,21 +24,6 @@ interface BusinessCardProps {
   ref?: React.Ref<HTMLDivElement>;
   /** Custom ID for business card */
   id?: string;
-}
-
-function getSafeMapUrl(mapUrl: string | null | undefined): string {
-  if (!mapUrl?.trim()) {
-    return '';
-  }
-
-  try {
-    const parsedUrl = new URL(mapUrl.trim());
-    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
-      ? parsedUrl.toString()
-      : '';
-  } catch {
-    return '';
-  }
 }
 
 /**
@@ -60,7 +46,7 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
     const [showImageModal, setShowImageModal] = useState(false);
 
   const imageUrl = getImageUrl(biz.image);
-  const mapUrl = getSafeMapUrl(biz.mapUrl);
+  const mapUrl = getSafeHttpUrl(biz.mapUrl);
 
   const handleShare = async () => {
     const success = await shareBusinessCard(biz);

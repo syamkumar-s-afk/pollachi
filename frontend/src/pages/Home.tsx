@@ -19,6 +19,7 @@ import BusinessCard from '../components/BusinessCard';
 import BusinessFilters from '../components/BusinessFilters';
 import { getImageUrl } from '../utils/imageUtils';
 import { getSharedBusinessId, clearSharedBusinessParam, fetchBusinessById } from '../utils/shareUtils';
+import { getSafeHttpUrl } from '../utils/urlUtils';
 
 /* ─── Helper function to group businesses by category and sort by category & subcategory serial numbers ─── */
 const BANNER_FALLBACKS: Record<string, { src: string; alt: string }> = {
@@ -161,7 +162,7 @@ export default function Home() {
     const src = hasUpload
       ? getImageUrl(db!.image_url)
       : BANNER_FALLBACKS[slot].src;
-    return { src, alt: BANNER_FALLBACKS[slot].alt, link: db?.link_url || null };
+    return { src, alt: BANNER_FALLBACKS[slot].alt, link: getSafeHttpUrl(db?.link_url) };
   });
 
   useEffect(() => {
@@ -466,12 +467,13 @@ export default function Home() {
                   const inlineAd = ads.find(a => a.slot === 'inline-ad');
                   const hasImage = inlineAd?.image_url && inlineAd.image_url.trim() !== '';
                   const displayUrl = hasImage && inlineAd?.image_url ? (inlineAd.image_url.startsWith('/uploads') ? `${API_URL}${inlineAd.image_url}` : inlineAd.image_url) : null;
+                  const linkUrl = getSafeHttpUrl(inlineAd?.link_url);
 
                   if (displayUrl) {
                     items.push(
                       <a
                         key="inline-ad"
-                        href={inlineAd?.link_url || '#'}
+                        href={linkUrl || '#'}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="bg-white border border-[var(--color-border)] overflow-hidden h-[130px] block"
@@ -543,6 +545,7 @@ export default function Home() {
             const adData = ads.find(a => a.slot === slot);
             const hasImage = adData?.image_url && adData.image_url.trim() !== '';
             const displayUrl = hasImage && adData?.image_url ? (adData.image_url.startsWith('/uploads') ? `${API_URL}${adData.image_url}` : adData.image_url) : null;
+            const linkUrl = getSafeHttpUrl(adData?.link_url);
 
             return (
               <div
@@ -553,7 +556,7 @@ export default function Home() {
                   Advertisement {idx + 1}
                 </div>
                 {displayUrl ? (
-                  <a href={adData?.link_url || '#'} target="_blank" rel="noopener noreferrer" className="block h-[130px] w-full bg-gray-100">
+                  <a href={linkUrl || '#'} target="_blank" rel="noopener noreferrer" className="block h-[130px] w-full bg-gray-100">
                     <img src={displayUrl} alt={`Advertisement ${idx + 1}`} className="w-full h-full object-cover" />
                   </a>
                 ) : (

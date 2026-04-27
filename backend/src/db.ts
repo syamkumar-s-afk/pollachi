@@ -1,9 +1,23 @@
 import { Pool } from 'pg';
+import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import { backfillBusinessAdIds } from './adIds';
 dotenv.config();
 
 let dbInstance: Pool | null = null;
+
+function getBootstrapAdminPassword(): string | null {
+  const password = process.env.ADMIN_BOOTSTRAP_PASSWORD?.trim();
+  if (!password) {
+    return null;
+  }
+
+  if (password.length < 12) {
+    throw new Error('ADMIN_BOOTSTRAP_PASSWORD must be at least 12 characters long.');
+  }
+
+  return password;
+}
 
 export async function getDb() {
   if (dbInstance) return dbInstance;
@@ -94,12 +108,16 @@ export async function getDb() {
     ADD COLUMN IF NOT EXISTS map_url TEXT;
   `);
 
-  // Insert default admin if no admin
+  // Bootstrap the first admin only when an explicit password is configured.
   const adminRes = await dbInstance.query('SELECT id FROM admin WHERE username = $1', ['admin']);
   if (adminRes.rowCount === 0) {
-    const bcrypt = require('bcrypt');
-    const hash = await bcrypt.hash('admin123', 10);
-    await dbInstance.query('INSERT INTO admin (username, password) VALUES ($1, $2)', ['admin', hash]);
+    const bootstrapPassword = getBootstrapAdminPassword();
+    if (bootstrapPassword) {
+      const hash = await bcrypt.hash(bootstrapPassword, 10);
+      await dbInstance.query('INSERT INTO admin (username, password) VALUES ($1, $2)', ['admin', hash]);
+    } else {
+      console.warn('[DB] No admin user exists. Set ADMIN_BOOTSTRAP_PASSWORD to create the first admin.');
+    }
   }
 
   // Initialize default admin settings

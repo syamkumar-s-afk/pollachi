@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   GraduationCap,
@@ -61,34 +61,37 @@ export default function CategoryMarquee() {
   const positionRef = useRef(0);
   const dragDistanceRef = useRef(0); // track total drag distance to distinguish click vs drag
   const mouseDownXRef = useRef(0);
+  const animateRef = useRef<() => void>(() => undefined);
 
   /* ─── Categories duplicated 4× for seamless infinite loop ─── */
   const categoryNames = categories.map(c => c.name);
   const items = categoryNames.length > 0 ? [...categoryNames, ...categoryNames, ...categoryNames, ...categoryNames] : [];
 
   /* ─── Animation loop ─── */
-  const animate = useCallback(() => {
-    const track = trackRef.current;
-    if (!track || isPaused || isDragging) return;
+  useEffect(() => {
+    animateRef.current = () => {
+      const track = trackRef.current;
+      if (!track || isPaused || isDragging) return;
 
-    positionRef.current += speedRef.current;
+      positionRef.current += speedRef.current;
 
-    // Reset position seamlessly when we've scrolled past one full set
-    const singleSetWidth = track.scrollWidth / 4;
-    if (positionRef.current >= singleSetWidth) {
-      positionRef.current -= singleSetWidth;
-    }
+      // Reset position seamlessly when we've scrolled past one full set
+      const singleSetWidth = track.scrollWidth / 4;
+      if (positionRef.current >= singleSetWidth) {
+        positionRef.current -= singleSetWidth;
+      }
 
-    track.scrollLeft = positionRef.current;
-    animationRef.current = requestAnimationFrame(animate);
+      track.scrollLeft = positionRef.current;
+      animationRef.current = requestAnimationFrame(animateRef.current);
+    };
   }, [isPaused, isDragging]);
 
   useEffect(() => {
-    animationRef.current = requestAnimationFrame(animate);
+    animationRef.current = requestAnimationFrame(animateRef.current);
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [animate]);
+  }, [isPaused, isDragging]);
 
   /* ─── Mouse drag handlers ─── */
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -112,7 +115,7 @@ export default function CategoryMarquee() {
 
   const handleMouseUp = () => {
     setIsDragging(false);
-    animationRef.current = requestAnimationFrame(animate);
+    animationRef.current = requestAnimationFrame(animateRef.current);
   };
 
   /* ─── Click handler (only fires if not a drag) ─── */
@@ -125,7 +128,7 @@ export default function CategoryMarquee() {
   const handleMouseLeave = () => {
     if (isDragging) {
       setIsDragging(false);
-      animationRef.current = requestAnimationFrame(animate);
+      animationRef.current = requestAnimationFrame(animateRef.current);
     }
     setIsPaused(false);
   };
@@ -148,7 +151,7 @@ export default function CategoryMarquee() {
 
   const handleTouchEnd = () => {
     setIsDragging(false);
-    animationRef.current = requestAnimationFrame(animate);
+    animationRef.current = requestAnimationFrame(animateRef.current);
   };
 
   return (

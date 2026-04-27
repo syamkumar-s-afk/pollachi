@@ -52,6 +52,11 @@ const EMPTY_FORM: BusinessForm = {
 };
 
 const AD_ID_REGEX = /^AD(\d+)$/i;
+const TEN_DIGIT_PHONE_REGEX = /^\d{10}$/;
+
+function getTenDigitValue(value: string): string {
+  return value.replace(/\D/g, '').slice(0, 10);
+}
 
 function getAdIdNumber(adId: string | null | undefined): number {
   if (!adId) {
@@ -181,9 +186,9 @@ export default function Admin() {
     if (!form.city.trim()) nextErrors.city = 'District is required';
     if (!form.address.trim()) nextErrors.address = 'Address is required';
     if (!form.phone.trim()) nextErrors.phone = 'Phone number is required';
-    else if (!/^[\d\s+\-()]{7,15}$/.test(form.phone)) nextErrors.phone = 'Enter a valid phone number';
+    else if (!TEN_DIGIT_PHONE_REGEX.test(form.phone)) nextErrors.phone = 'Phone number must be exactly 10 digits';
     if (!form.whatsapp.trim()) nextErrors.whatsapp = 'WhatsApp number is required';
-    else if (!/^[\d\s+\-()]{7,15}$/.test(form.whatsapp)) nextErrors.whatsapp = 'Enter a valid WhatsApp number';
+    else if (!TEN_DIGIT_PHONE_REGEX.test(form.whatsapp)) nextErrors.whatsapp = 'WhatsApp number must be exactly 10 digits';
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -228,8 +233,8 @@ export default function Admin() {
       sub_category: business.sub_category,
       city: business.city,
       address: business.address,
-      phone: business.phone,
-      whatsapp: business.whatsapp,
+      phone: getTenDigitValue(business.phone),
+      whatsapp: getTenDigitValue(business.whatsapp),
       mapUrl: business.mapUrl ?? '',
       adId: business.adId ?? '',
     });
@@ -304,7 +309,7 @@ export default function Admin() {
   };
 
   const inputClass = (field: string) =>
-    `w-full rounded-xl border p-2.5 text-sm outline-none transition-colors focus:ring-2 ${
+    `w-full rounded-lg border p-2 text-sm outline-none transition-colors focus:ring-2 sm:rounded-xl sm:p-2.5 ${
       errors[field]
         ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200'
         : 'border-[var(--color-border)] bg-white focus:border-[var(--color-primary)] focus:ring-[var(--color-primary)]/20'
@@ -401,18 +406,18 @@ export default function Admin() {
       sidebarContent={businessSidebarContent}
     >
       {activeSection === 'add-business' && (
-        <div className="space-y-6">
-          <div className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-sm">
-            <div className="mb-6 flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-lg font-bold text-[var(--color-text-primary)]">
+        <div className="space-y-3 sm:space-y-6">
+          <div className="rounded-lg border border-[var(--color-border)] bg-white p-3 shadow-sm sm:rounded-xl sm:p-6">
+            <div className="mb-3 flex items-center justify-between sm:mb-6">
+              <h3 className="flex items-center gap-2 text-base font-bold text-[var(--color-text-primary)] sm:text-lg">
                 {form.id ? (
                   <>
-                    <Pencil className="h-5 w-5 text-[var(--color-primary)]" />
+                    <Pencil className="h-4 w-4 text-[var(--color-primary)] sm:h-5 sm:w-5" />
                     Edit Business
                   </>
                 ) : (
                   <>
-                    <Plus className="h-5 w-5 text-[var(--color-primary)]" />
+                    <Plus className="h-4 w-4 text-[var(--color-primary)] sm:h-5 sm:w-5" />
                     Add Business
                   </>
                 )}
@@ -430,8 +435,8 @@ export default function Admin() {
               )}
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 text-sm">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <form onSubmit={handleSubmit} className="space-y-3 text-sm sm:space-y-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
                 <div>
                   <label
                     htmlFor="biz-name"
@@ -512,7 +517,7 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
                 <div>
                   <label
                     htmlFor="biz-city"
@@ -576,7 +581,7 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
                 <div>
                   <label
                     htmlFor="biz-phone"
@@ -586,9 +591,13 @@ export default function Admin() {
                   </label>
                   <input
                     id="biz-phone"
-                    placeholder="Phone number"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="\d{10}"
+                    maxLength={10}
+                    placeholder="10 digit phone number"
                     value={form.phone}
-                    onChange={(event) => setForm({ ...form, phone: event.target.value })}
+                    onChange={(event) => setForm({ ...form, phone: getTenDigitValue(event.target.value) })}
                     className={inputClass('phone')}
                   />
                   {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
@@ -603,9 +612,13 @@ export default function Admin() {
                   </label>
                   <input
                     id="biz-whatsapp"
-                    placeholder="WhatsApp number"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="\d{10}"
+                    maxLength={10}
+                    placeholder="10 digit WhatsApp number"
                     value={form.whatsapp}
-                    onChange={(event) => setForm({ ...form, whatsapp: event.target.value })}
+                    onChange={(event) => setForm({ ...form, whatsapp: getTenDigitValue(event.target.value) })}
                     className={inputClass('whatsapp')}
                   />
                   {errors.whatsapp && (
@@ -641,7 +654,7 @@ export default function Admin() {
                     <img
                       src={imagePreview}
                       alt="Upload preview"
-                      className="h-32 w-full object-cover"
+                    className="h-24 w-full object-cover sm:h-32"
                     />
                     <button
                       type="button"
@@ -657,7 +670,7 @@ export default function Admin() {
                   </div>
                 )}
 
-                <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--color-border)] py-3 text-sm text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-primary)] hover:bg-red-50/50 hover:text-[var(--color-primary)]">
+                <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[var(--color-border)] py-2.5 text-sm text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-primary)] hover:bg-red-50/50 hover:text-[var(--color-primary)] sm:rounded-xl sm:py-3">
                   <ImagePlus className="h-4 w-4" />
                   {file ? file.name : 'Choose image...'}
                   <input
@@ -669,11 +682,11 @@ export default function Admin() {
                 </label>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="sticky bottom-0 -mx-3 flex gap-2 border-t border-[var(--color-border)] bg-white/95 px-3 py-2 pt-2 backdrop-blur sm:static sm:mx-0 sm:gap-3 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:pt-2 sm:backdrop-blur-none">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[var(--color-primary-hover)] hover:shadow-md disabled:opacity-50"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[var(--color-primary-hover)] hover:shadow-md disabled:opacity-50 sm:rounded-xl sm:py-3"
                 >
                   {saving ? (
                     <>
@@ -691,7 +704,7 @@ export default function Admin() {
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="flex-1 rounded-xl bg-gray-100 py-3 text-sm font-semibold text-[var(--color-text-secondary)] transition-colors hover:bg-gray-200"
+                    className="flex-1 rounded-lg bg-gray-100 py-2.5 text-sm font-semibold text-[var(--color-text-secondary)] transition-colors hover:bg-gray-200 sm:rounded-xl sm:py-3"
                   >
                     Cancel
                   </button>
@@ -703,14 +716,14 @@ export default function Admin() {
       )}
 
       {activeSection === 'all-businesses' && (
-        <div className="space-y-6">
-          <div className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-sm">
-            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-3 sm:space-y-6">
+          <div className="rounded-lg border border-[var(--color-border)] bg-white p-3 shadow-sm sm:rounded-xl sm:p-6">
+            <div className="mb-3 flex flex-col gap-3 lg:mb-6 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
+                <h3 className="text-base font-bold text-[var(--color-text-primary)] sm:text-lg">
                   All Businesses
                 </h3>
-                <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                <p className="mt-0.5 text-xs text-[var(--color-text-muted)] sm:mt-1 sm:text-sm">
                   Browse, search, edit, and manage every business from a single workspace.
                 </p>
               </div>
@@ -722,13 +735,13 @@ export default function Admin() {
                   placeholder="Search by name, city, category, or Ad ID"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
-                  className="w-full rounded-xl border border-[var(--color-border)] bg-white py-3 pl-9 pr-4 text-sm outline-none transition-colors hover:border-[var(--color-primary)]/40 focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
+                  className="w-full rounded-lg border border-[var(--color-border)] bg-white py-2.5 pl-9 pr-3 text-sm outline-none transition-colors hover:border-[var(--color-primary)]/40 focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10 sm:rounded-xl sm:py-3 sm:pr-4"
                   aria-label="Search all businesses"
                 />
               </div>
             </div>
 
-            <div className="mb-4 rounded-2xl border border-[var(--color-border)] bg-gray-50 px-4 py-3 text-sm text-[var(--color-text-secondary)]">
+            <div className="mb-3 rounded-lg border border-[var(--color-border)] bg-gray-50 px-3 py-2 text-xs text-[var(--color-text-secondary)] sm:mb-4 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm">
               Showing <span className="font-semibold text-[var(--color-text-primary)]">{sortedBusinesses.length}</span> of{' '}
               <span className="font-semibold text-[var(--color-text-primary)]">{businesses.length}</span> businesses
             </div>
@@ -739,33 +752,33 @@ export default function Admin() {
                 <p className="text-sm font-medium">No businesses found</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
                 {sortedBusinesses.map((business) => (
                   <div
                     key={business.id}
-                    className="rounded-2xl border border-[var(--color-border)] bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                    className="rounded-lg border border-[var(--color-border)] bg-white p-2.5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:rounded-2xl sm:p-3"
                   >
                     <div className="space-y-2">
-                      <h4 className="line-clamp-2 text-sm font-bold leading-tight text-[var(--color-text-primary)] sm:text-base">
+                      <h4 className="line-clamp-2 text-xs font-bold leading-tight text-[var(--color-text-primary)] sm:text-base">
                         {business.name}
                       </h4>
-                      <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-[var(--color-primary)]">
+                      <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-[var(--color-primary)] sm:px-3 sm:py-1 sm:text-xs">
                         {business.adId || 'Pending Ad ID'}
                       </span>
                     </div>
 
-                    <div className="mt-3 flex items-center gap-2">
+                    <div className="mt-2 flex items-center gap-1.5 sm:mt-3 sm:gap-2">
                       <button
                         type="button"
                         onClick={() => editBusiness(business)}
-                        className="flex-1 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+                        className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm"
                       >
                         Edit
                       </button>
                       <button
                         type="button"
                         onClick={() => setDeleteTarget(business)}
-                        className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
+                        className="rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm"
                         aria-label={`Delete ${business.name}`}
                       >
                         <Trash2 className="h-4 w-4" />

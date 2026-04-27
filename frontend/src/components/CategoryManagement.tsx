@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Trash2, Edit2, Plus, Loader2, AlertCircle, Star, Radio, RadioOff } from 'lucide-react';
+import { Trash2, Edit2, Plus, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useToast } from './Toast';
 import { useAdminSettings } from '../hooks/useAdminSettings';
 import ConfirmModal from './ConfirmModal';
 import type { Category } from '../types';
 import type { UseCategories } from '../hooks/useCategories';
-import { toggleCategoryPriority } from '../services/api';
 
 interface CategoryManagementProps {
   token: string;
@@ -40,12 +39,11 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
   const [isAddingSubcat, setIsAddingSubcat] = useState(false);
   const [editingSubcat, setEditingSubcat] = useState<{ id: number; name: string; displayOrder: number | undefined } | null>(null);
   const [isUpdatingSubcat, setIsUpdatingSubcat] = useState(false);
-  const [togglingPriority, setTogglingPriority] = useState<number | null>(null);
   const currentDisplayMode = adminSettings.businessDisplayMode;
   const nextDisplayMode =
     currentDisplayMode === 'category-based' ? 'recently-added' : 'category-based';
 
-  // ─── CREATE HANDLERS ───
+  // --- CREATE HANDLERS ---
   const validateCreateForm = (): boolean => {
     const errors: Record<string, string> = {};
     if (!createForm.name.trim()) errors.name = 'Category name is required';
@@ -74,8 +72,8 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
       for (const subcat of validSubcats) {
         try {
           await createSubcategory(newCat.id, subcat.name, token, subcat.displayOrder);
-        } catch (subErr) {
-          console.error("Failed to add subcategory:", subcat.name);
+        } catch (error) {
+          console.error('Failed to add subcategory:', subcat.name, error);
         }
       }
 
@@ -96,7 +94,7 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
     }
   };
 
-  // ─── EDIT HANDLERS ───
+  // --- EDIT HANDLERS ---
   const handleEditClick = (category: Category) => {
     setEditingCategory(category);
     setEditForm({ name: category.name, displayOrder: category.display_order });
@@ -140,23 +138,7 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
     }
   };
 
-  // ─── PRIORITY HANDLER ───
-  const handleTogglePriority = async (categoryId: number, currentPriority: boolean) => {
-    setTogglingPriority(categoryId);
-    try {
-      await toggleCategoryPriority(categoryId, !currentPriority, token);
-      toast.success(
-        'Priority updated',
-        `Category has been marked as ${!currentPriority ? 'priority' : 'regular'}.`
-      );
-    } catch (err: any) {
-      toast.error('Failed to update', err?.message || 'Could not toggle priority.');
-    } finally {
-      setTogglingPriority(null);
-    }
-  };
-
-  // ─── DELETE HANDLERS ───
+  // --- DELETE HANDLERS ---
   const handleDelete = async () => {
     if (!deleteTarget) return;
 
@@ -181,7 +163,7 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
     }
   };
 
-  // ─── DISPLAY MODE HANDLERS ───
+  // --- DISPLAY MODE HANDLERS ---
   const handleToggleDisplayMode = async () => {
     setTogglingDisplayMode(true);
     try {
@@ -198,7 +180,7 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
     }
   };
 
-  // ─── SUBCATEGORY HANDLERS ───
+  // --- SUBCATEGORY HANDLERS ---
   const handleAddSubcategory = async (e?: React.MouseEvent | React.FormEvent) => {
     if (e) e.preventDefault();
     if (!editingCategory || !newSubcatName.trim()) return;
@@ -248,7 +230,7 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
     }
   };
 
-  // ─── RENDER ───
+  // --- RENDER ---
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -268,83 +250,71 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Display Settings Section */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex-1">
-            <h3 className="font-semibold text-[var(--color-text-primary)] mb-1.5">Business Display Mode</h3>
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              Control how business cards are displayed on the homepage
+      <div className="rounded-lg border border-[var(--color-border)] bg-white p-3 shadow-sm sm:rounded-xl sm:p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-[var(--color-text-primary)] sm:text-base">Business Display Mode</h3>
+            <p className="mt-0.5 text-xs text-[var(--color-text-muted)] sm:mt-1 sm:text-sm">
+              Choose how businesses appear on the homepage.
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2 rounded-lg bg-white/60 px-3 py-2">
-                {currentDisplayMode === 'category-based' ? (
-                  <Radio className="w-5 h-5 text-blue-600" />
-                ) : (
-                  <RadioOff className="w-5 h-5 text-gray-400" />
-                )}
-                <span className={`text-sm font-medium ${
-                  currentDisplayMode === 'category-based'
-                    ? 'text-[var(--color-text-primary)]'
-                    : 'text-[var(--color-text-secondary)]'
-                }`}>
-                  Category-Based
-                </span>
-                <span className="text-xs text-[var(--color-text-muted)]">
-                  {currentDisplayMode === 'category-based' ? '(Active)' : ''}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 rounded-lg bg-white/60 px-3 py-2">
-                {currentDisplayMode === 'recently-added' ? (
-                  <Radio className="w-5 h-5 text-blue-600" />
-                ) : (
-                  <RadioOff className="w-5 h-5 text-gray-400" />
-                )}
-                <span className={`text-sm font-medium ${
-                  currentDisplayMode === 'recently-added'
-                    ? 'text-[var(--color-text-primary)]'
-                    : 'text-[var(--color-text-secondary)]'
-                }`}>
-                  Recently Added
-                </span>
-                <span className="text-xs text-[var(--color-text-muted)]">
-                  {currentDisplayMode === 'recently-added' ? '(Active)' : ''}
-                </span>
-              </div>
-            </div>
           </div>
-          <button
-            onClick={handleToggleDisplayMode}
-            disabled={togglingDisplayMode || settingsLoading}
-            className={`px-5 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
-              currentDisplayMode === 'category-based'
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-600 text-white hover:bg-gray-700'
-            } disabled:opacity-50 disabled:cursor-not-allowed lg:ml-6`}
-            title={currentDisplayMode === 'category-based' ? 'Switch to Recently Added mode' : 'Switch to Category-Based mode'}
-          >
-            {togglingDisplayMode ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Updating mode...
-              </>
-            ) : (
-              nextDisplayMode === 'category-based'
-                ? 'Switch to Categories'
-                : 'Switch to Recently Added'
-            )}
-          </button>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="inline-flex w-full rounded-lg border border-[var(--color-border)] bg-gray-50 p-1 sm:w-auto">
+              {[
+                { key: 'category-based' as const, label: 'Category-Based' },
+                { key: 'recently-added' as const, label: 'Recently Added' },
+              ].map((mode) => {
+                const isActive = currentDisplayMode === mode.key;
+                return (
+                  <button
+                    key={mode.key}
+                    type="button"
+                    onClick={isActive ? undefined : handleToggleDisplayMode}
+                    disabled={isActive || togglingDisplayMode || settingsLoading}
+                    className={`inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold transition-colors sm:h-9 sm:flex-none sm:gap-2 sm:px-3 sm:text-sm ${
+                      isActive
+                        ? 'bg-white text-[var(--color-primary)] shadow-sm'
+                        : 'text-[var(--color-text-secondary)] hover:bg-white hover:text-[var(--color-text-primary)]'
+                    } disabled:cursor-default`}
+                  >
+                    {isActive && <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
+                    {mode.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={handleToggleDisplayMode}
+              disabled={togglingDisplayMode || settingsLoading}
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[var(--color-text-primary)] px-3 text-xs font-bold text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:px-4 sm:text-sm"
+              title={currentDisplayMode === 'category-based' ? 'Switch to Recently Added mode' : 'Switch to Category-Based mode'}
+            >
+              {togglingDisplayMode ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                nextDisplayMode === 'category-based'
+                  ? 'Switch '
+                  : 'Switch'
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-[var(--color-border)]">
+      <div className="flex gap-1 overflow-x-auto border-b border-[var(--color-border)] sm:gap-2">
         {(['list', 'create', 'edit'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-3 font-semibold text-sm border-b-2 transition-colors ${
+            className={`whitespace-nowrap border-b-2 px-3 py-2 text-xs font-semibold transition-colors sm:px-4 sm:py-3 sm:text-sm ${
               activeTab === tab
                 ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
                 : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
@@ -359,7 +329,7 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
 
       {/* List Tab */}
       {activeTab === 'list' && (
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {categories.length === 0 ? (
             <div className="text-center py-8 text-[var(--color-text-muted)]">
               <p>No categories yet. Create one to get started!</p>
@@ -367,48 +337,24 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
           ) : (
             <div className="grid gap-2">
               {categories.map((cat) => (
-                <div key={cat.id} className="flex items-center justify-between p-4 bg-white border border-[var(--color-border)] rounded-xl hover:shadow-sm transition-shadow">
+                <div key={cat.id} className="flex items-center justify-between gap-2 rounded-lg border border-[var(--color-border)] bg-white p-3 transition-shadow hover:shadow-sm sm:rounded-xl sm:p-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-[var(--color-text-primary)]">{cat.name}</p>
-                      {cat.is_priority && (
-                        <span title="Priority Category">
-                          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                    <p className="line-clamp-1 text-sm font-semibold text-[var(--color-text-primary)] sm:text-base">{cat.name}</p>
+                    <p className="mt-0.5 text-xs text-[var(--color-text-muted)] sm:mt-1">
                       {cat.subcategories?.length || 0} subcategorie{(cat.subcategories?.length || 0) !== 1 ? 's' : ''}
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleTogglePriority(cat.id, cat.is_priority || false)}
-                      disabled={togglingPriority === cat.id}
-                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-                        cat.is_priority
-                          ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                          : 'text-amber-600 hover:bg-amber-50'
-                      } disabled:opacity-50`}
-                      title={cat.is_priority ? 'Remove from priority' : 'Mark as priority'}
-                    >
-                      {togglingPriority === cat.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Star className={`w-4 h-4 ${cat.is_priority ? 'fill-current' : ''}`} />
-                      )}
-                      {cat.is_priority ? 'Priority' : 'Set Priority'}
-                    </button>
+                  <div className="flex shrink-0 gap-1.5 sm:gap-2">
                     <button
                       onClick={() => handleEditClick(cat)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold text-[var(--color-primary)] hover:bg-red-50 transition-colors"
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-[var(--color-primary)] transition-colors hover:bg-red-50 sm:px-3 sm:text-sm"
                     >
                       <Edit2 className="w-4 h-4" />
                       Edit
                     </button>
                     <button
                       onClick={() => setDeleteTarget({ id: cat.id, name: cat.name, type: 'category' })}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 sm:px-3 sm:text-sm"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete
@@ -423,7 +369,7 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
 
       {/* Create Tab */}
       {activeTab === 'create' && (
-        <form onSubmit={handleCreateSubmit} className="max-w-md space-y-4 bg-white p-6 rounded-xl border border-[var(--color-border)]">
+        <form onSubmit={handleCreateSubmit} className="max-w-md space-y-3 rounded-lg border border-[var(--color-border)] bg-white p-3 sm:space-y-4 sm:rounded-xl sm:p-6">
           <div>
             <label className="block text-sm font-semibold text-[var(--color-text-secondary)] mb-2">Category Name *</label>
             <input
@@ -519,8 +465,8 @@ export default function CategoryManagement({ token, categoryStore }: CategoryMan
 
       {/* Edit Tab */}
       {activeTab === 'edit' && editingCategory && (
-        <div className="space-y-6">
-          <form onSubmit={handleUpdateSubmit} className="max-w-md space-y-6 bg-white p-6 rounded-xl border border-[var(--color-border)]">
+        <div className="space-y-3 sm:space-y-6">
+          <form onSubmit={handleUpdateSubmit} className="max-w-md space-y-4 rounded-lg border border-[var(--color-border)] bg-white p-3 sm:space-y-6 sm:rounded-xl sm:p-6">
             <h3 className="font-bold text-[var(--color-text-primary)] border-b border-[var(--color-border)] pb-3">Edit Category</h3>
 
             {/* General Settings */}

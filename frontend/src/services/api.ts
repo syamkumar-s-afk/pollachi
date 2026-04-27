@@ -28,7 +28,7 @@ async function request<T>(
       try {
         const errJson = await res.json();
         serverError = errJson.error || errJson.message || '';
-      } catch (e) {
+      } catch {
         // ignore JSON parse error
       }
       

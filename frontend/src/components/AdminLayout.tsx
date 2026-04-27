@@ -24,12 +24,12 @@ export default function AdminLayout({
     <div className="flex flex-col min-h-screen">
       {/* Sidebar Toggle Button (Mobile) */}
       {isMobile && (
-        <div className="md:hidden sticky top-16 z-40 bg-white border-b border-[var(--color-border)] px-4 py-3">
+        <div className="md:hidden sticky top-12 z-40 border-b border-[var(--color-border)] bg-white px-2 py-2">
           <button
             onClick={toggle}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-gray-50 transition-colors"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 text-xs font-bold text-[var(--color-text-secondary)] transition-colors hover:bg-gray-50"
           >
-            ☰ {isCollapsed ? 'Show' : 'Hide'} Menu
+            Menu
           </button>
         </div>
       )}
@@ -47,7 +47,7 @@ export default function AdminLayout({
         />
 
         {/* Main Content */}
-        <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        <main className="flex-1 max-w-7xl mx-auto w-full px-2 py-3 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
           {children}
         </main>
       </div>

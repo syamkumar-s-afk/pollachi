@@ -26,7 +26,7 @@ interface SidebarNavProps {
 }
 
 const navItemClassName =
-  'w-full rounded-xl text-sm font-semibold transition-colors';
+  'w-full rounded-lg text-sm font-semibold transition-colors';
 
 export default function SidebarNav({
   activeSection,
@@ -85,7 +85,7 @@ export default function SidebarNav({
       <button
         type="button"
         onClick={() => handleNavClick(section)}
-        className={`${navItemClassName} flex items-center gap-3 px-3 py-3 ${
+        className={`${navItemClassName} flex items-center gap-3 px-3 py-2.5 sm:py-3 ${
           isNested ? 'ml-2' : ''
         } ${
           isActive
@@ -111,7 +111,7 @@ export default function SidebarNav({
       )}
 
       <aside className={sidebarClasses}>
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] p-4">
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] p-3 sm:p-4">
           {!isCollapsed && (
             <span className="font-bold text-[var(--color-text-primary)]">
               Admin
@@ -129,18 +129,18 @@ export default function SidebarNav({
           )}
         </div>
 
-        <nav className="flex-1 space-y-2 p-3">
+        <nav className="flex-1 space-y-1.5 p-2 sm:space-y-2 sm:p-3">
           {isCollapsed ? (
             <>
               {renderNavButton('add-business', 'Add Business', <Plus className="h-5 w-5" />)}
               {renderNavButton('all-businesses', 'All Businesses', <List className="h-5 w-5" />)}
             </>
           ) : (
-            <div className="rounded-2xl border border-[var(--color-border)] bg-gray-50/70 p-2">
+            <div className="rounded-xl border border-[var(--color-border)] bg-gray-50/70 p-1.5 sm:rounded-2xl sm:p-2">
               <button
                 type="button"
                 onClick={() => setIsBusinessMenuOpen((current) => !current)}
-                className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-left transition-colors ${
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors sm:rounded-xl sm:py-3 ${
                   isBusinessSection
                     ? 'bg-white text-[var(--color-text-primary)] shadow-sm'
                     : 'text-[var(--color-text-secondary)] hover:bg-white'
@@ -149,8 +149,8 @@ export default function SidebarNav({
                 <div className="flex items-center gap-3">
                   <Briefcase className="h-5 w-5 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-semibold">Businesses</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">
+                    <p className="text-sm font-semibold leading-tight">Businesses</p>
+                    <p className="text-[11px] text-[var(--color-text-muted)] sm:text-xs">
                       Add and browse listings
                     </p>
                   </div>
@@ -163,7 +163,7 @@ export default function SidebarNav({
               </button>
 
               {isBusinessMenuOpen && (
-                <div className="mt-2 space-y-2">
+                <div className="mt-1.5 space-y-1.5 sm:mt-2 sm:space-y-2">
                   {renderNavButton('add-business', 'Add Business', <Plus className="h-4 w-4" />, {
                     nested: true,
                   })}
@@ -191,7 +191,7 @@ export default function SidebarNav({
           </div>
         )}
 
-        <div className="space-y-3 border-t border-[var(--color-border)] p-3">
+        <div className="space-y-2 border-t border-[var(--color-border)] p-2 sm:space-y-3 sm:p-3">
           {onLogout && (
             <button
               type="button"

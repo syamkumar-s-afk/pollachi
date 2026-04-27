@@ -4,4 +4,7 @@ dist
 .env.*
 *.rar
 *.zip
+*.log
+*.stackdump
+*.sqlite
 uploads/

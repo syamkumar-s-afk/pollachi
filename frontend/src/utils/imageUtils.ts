@@ -13,8 +13,8 @@ export const getImageUrl = (path: string | null | undefined, fallbackText = 'No 
     return `https://placehold.co/400x300?text=${encodeURIComponent(fallbackText)}`;
   }
 
-  // If it's already a full URL or base64 data, return as is
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+  // If it's already a full URL or safe base64 image data, return as is
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:image/')) {
     return path;
   }
 

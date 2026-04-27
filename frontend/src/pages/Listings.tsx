@@ -17,6 +17,7 @@ import CategoryMarquee from '../components/CategoryMarquee';
 import BusinessFilters from '../components/BusinessFilters';
 import type { Business } from '../types';
 import { getSharedBusinessId, clearSharedBusinessParam, fetchBusinessById } from '../utils/shareUtils';
+import { getSafeHttpUrl } from '../utils/urlUtils';
 
 export default function Listings() {
   const location = useLocation();
@@ -309,6 +310,7 @@ export default function Listings() {
             const adData = ads.find(a => a.slot === slot);
             const hasImage = adData?.image_url && adData.image_url.trim() !== '';
             const displayUrl = hasImage && adData?.image_url ? (adData.image_url.startsWith('/uploads') ? `${API_URL}${adData.image_url}` : adData.image_url) : null;
+            const linkUrl = getSafeHttpUrl(adData?.link_url);
 
             return (
               <div
@@ -319,7 +321,7 @@ export default function Listings() {
                   Advertisement {idx + 1}
                 </div>
                 {displayUrl ? (
-                  <a href={adData?.link_url || '#'} target="_blank" rel="noopener noreferrer" className="block h-[130px] w-full bg-gray-100">
+                  <a href={linkUrl || '#'} target="_blank" rel="noopener noreferrer" className="block h-[130px] w-full bg-gray-100">
                     <img src={displayUrl} alt={`Advertisement ${idx + 1}`} className="w-full h-full object-cover" />
                   </a>
                 ) : (

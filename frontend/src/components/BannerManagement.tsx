@@ -25,17 +25,17 @@ export default function BannerManagement() {
   const [updatingSlot, setUpdatingSlot] = useState<string | null>(null);
 
   return (
-    <div className="space-y-4 max-w-5xl">
-      <div className="bg-white p-5 rounded-xl border border-[var(--color-border)] shadow-sm">
-        <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-1 tracking-tight">
+    <div className="max-w-5xl space-y-3 sm:space-y-4">
+      <div className="rounded-lg border border-[var(--color-border)] bg-white p-3 shadow-sm sm:rounded-xl sm:p-5">
+        <h2 className="mb-1 text-base font-bold tracking-tight text-[var(--color-text-primary)] sm:text-lg">
           Homepage Banners
         </h2>
-        <p className="text-xs text-[var(--color-text-muted)] mb-6 pb-4 border-b border-[var(--color-border)]">
+        <p className="mb-4 border-b border-[var(--color-border)] pb-3 text-xs text-[var(--color-text-muted)] sm:mb-6 sm:pb-4">
           Upload images for each of the 5 carousel banner slots. Changes are reflected immediately on the homepage.
           If no image is uploaded for a slot, the default stock photo is used.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
           {['banner1', 'banner2', 'banner3', 'banner4', 'banner5'].map((slot) => {
             const banner = banners.find(b => b.slot === slot);
             return (
@@ -106,9 +106,9 @@ function BannerSlotForm({ slot, label, fallback, banner, updateBanner, updatingS
   };
 
   return (
-    <div className="border border-[var(--color-border)] rounded-xl overflow-hidden shadow-sm hover:shadow transition-shadow bg-white flex flex-col">
+    <div className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-border)] bg-white shadow-sm transition-shadow hover:shadow sm:rounded-xl">
       {/* Preview */}
-      <div className="relative h-[120px] bg-gray-100 overflow-hidden group">
+      <div className="group relative h-[100px] overflow-hidden bg-gray-100 sm:h-[120px]">
         <img
           src={displayImage}
           alt={label}

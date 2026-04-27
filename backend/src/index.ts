@@ -4,7 +4,6 @@ import bcrypt from 'bcrypt';
 import jwt from 'jwt-simple';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { getDb } from './db';
@@ -17,37 +16,137 @@ import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
+function requireEnv(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
+function getAllowedOrigins(): string[] {
+  const configuredOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (configuredOrigins.length > 0) {
+    return configuredOrigins;
+  }
+
+  return ['http://localhost:5173', 'http://127.0.0.1:5173'];
+}
+
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SECRET_KEY!
+  requireEnv('SUPABASE_URL'),
+  requireEnv('SUPABASE_SECRET_KEY')
 );
 
 const app = express();
-const port = 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-123';
+const port = parseInt(process.env.PORT || '3001', 10);
+const JWT_SECRET = requireEnv('JWT_SECRET');
+const allowedOrigins = getAllowedOrigins();
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" } // For image uploads access
 }));
-app.use(cors());
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  },
+}));
 app.use(express.json());
 
 
 
 // Storage for images in memory before uploading to Supabase
+const ALLOWED_IMAGE_TYPES = new Map([
+  ['image/jpeg', '.jpg'],
+  ['image/png', '.png'],
+  ['image/webp', '.webp'],
+  ['image/gif', '.gif'],
+]);
+
+function hasValidImageSignature(file: Express.Multer.File): boolean {
+  const buffer = file.buffer;
+
+  if (file.mimetype === 'image/jpeg') {
+    return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  }
+
+  if (file.mimetype === 'image/png') {
+    return buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  }
+
+  if (file.mimetype === 'image/webp') {
+    return buffer.length >= 12 && buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP';
+  }
+
+  if (file.mimetype === 'image/gif') {
+    const signature = buffer.subarray(0, 6).toString('ascii');
+    return signature === 'GIF87a' || signature === 'GIF89a';
+  }
+
+  return false;
+}
+
+function validateImageFile(file: Express.Multer.File): void {
+  if (!ALLOWED_IMAGE_TYPES.has(file.mimetype)) {
+    throw new Error('Only JPG, PNG, WEBP, and GIF images are allowed.');
+  }
+
+  if (!hasValidImageSignature(file)) {
+    throw new Error('Uploaded file content does not match a supported image type.');
+  }
+}
+
+function normalizeOptionalUrl(value: unknown): string {
+  const url = String(value ?? '').trim();
+  if (!url) {
+    return '';
+  }
+
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new Error('Invalid URL protocol');
+    }
+    return parsed.toString();
+  } catch {
+    throw Object.assign(new Error('URL must start with http:// or https://.'), {
+      status: 400,
+      code: 'INVALID_URL',
+    });
+  }
+}
+
 const storage = multer.memoryStorage();
 const upload = multer({ 
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (_req, file, callback) => {
+    if (!ALLOWED_IMAGE_TYPES.has(file.mimetype)) {
+      callback(new Error('Only JPG, PNG, WEBP, and GIF images are allowed.'));
+      return;
+    }
+
+    callback(null, true);
+  },
 });
 
 // Helper to upload to Supabase Storage
 async function uploadToSupabase(file: Express.Multer.File): Promise<string> {
-  const fileExt = path.extname(file.originalname).toLowerCase();
+  validateImageFile(file);
+  const fileExt = ALLOWED_IMAGE_TYPES.get(file.mimetype) || path.extname(file.originalname).toLowerCase();
   const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}${fileExt}`;
   const bucketName = 'product-images';
   
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from(bucketName)
     .upload(fileName, file.buffer, {
       contentType: file.mimetype,
@@ -181,7 +280,7 @@ app.post('/api/businesses', auth, upload.single('imageFile'), async (req, res) =
   try {
     const db = await getDb();
     const { name, category, sub_category, city, address, phone, whatsapp, adId } = req.body;
-    const mapUrl = String(req.body.mapUrl ?? req.body.map_url ?? '').trim();
+    const mapUrl = normalizeOptionalUrl(req.body.mapUrl ?? req.body.map_url);
     let image = req.body.image || '';
 
     if (req.file) {
@@ -251,7 +350,7 @@ app.put('/api/businesses/:id', auth, upload.single('imageFile'), async (req, res
             : (existingBusiness.rows[0]?.image ?? '');
       const finalMapUrl =
         req.body.mapUrl !== undefined || req.body.map_url !== undefined
-          ? String(req.body.mapUrl ?? req.body.map_url ?? '').trim()
+          ? normalizeOptionalUrl(req.body.mapUrl ?? req.body.map_url)
           : (existingBusiness.rows[0]?.map_url ?? '');
 
       await client.query(
@@ -658,7 +757,7 @@ app.put('/api/advertisements/:slot', auth, upload.single('imageFile'), async (re
   try {
     const db = await getDb();
     const { slot } = req.params;
-    const { link_url } = req.body;
+    const link_url = normalizeOptionalUrl(req.body.link_url);
     let image_url = req.body.image_url;
 
     if (req.file) {
@@ -715,7 +814,7 @@ app.put('/api/banners/:slot', auth, upload.single('imageFile'), async (req, res)
   try {
     const db = await getDb();
     const { slot } = req.params;
-    const { link_url } = req.body;
+    const link_url = normalizeOptionalUrl(req.body.link_url);
     let image_url = req.body.image_url;
 
     if (req.file) {
@@ -797,6 +896,28 @@ app.patch('/api/admin/settings/business-display-mode', auth, async (req, res) =>
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to update display mode', code: 'ERROR' });
   }
+});
+
+app.use((error: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (res.headersSent) {
+    next(error);
+    return;
+  }
+
+  if (error instanceof multer.MulterError) {
+    const message = error.code === 'LIMIT_FILE_SIZE'
+      ? 'Image must be 5MB or smaller.'
+      : error.message;
+    res.status(400).json({ error: message, code: error.code });
+    return;
+  }
+
+  if (error instanceof Error && error.message.includes('Only JPG')) {
+    res.status(400).json({ error: error.message, code: 'INVALID_IMAGE_TYPE' });
+    return;
+  }
+
+  next(error);
 });
 
 app.listen(port, () => {

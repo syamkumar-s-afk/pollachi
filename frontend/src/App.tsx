@@ -3,6 +3,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import MobileAddBusinessBanner from './components/MobileAddBusinessBanner';
 import SkipToContent from './components/SkipToContent';
+import ScrollToTop from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
 import Home from './pages/Home';
@@ -18,6 +19,7 @@ function App() {
   return (
     <ErrorBoundary>
       <ToastProvider>
+        <ScrollToTop />
         <SkipToContent />
         <div className="flex flex-col min-h-screen">
           <Header />

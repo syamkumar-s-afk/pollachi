@@ -95,6 +95,14 @@ export async function getDb() {
       setting_value VARCHAR(255) NOT NULL,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS popup_ad (
+      id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+      image_url TEXT,
+      image_phone TEXT,
+      button_phone TEXT,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Add is_priority column if it doesn't exist (migration)
@@ -183,6 +191,12 @@ export async function getDb() {
       [slot, '', '']
     );
   }
+
+  await dbInstance.query(
+    `INSERT INTO popup_ad (id, image_url, image_phone, button_phone)
+     VALUES (1, '', '', '')
+     ON CONFLICT (id) DO NOTHING`
+  );
 
   return dbInstance;
 }

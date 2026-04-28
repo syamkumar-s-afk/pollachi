@@ -223,6 +223,22 @@ const respondWithError = (
 const BUSINESS_SELECT_FIELDS =
   'id, name, category, sub_category, city, address, phone, whatsapp, map_url AS "mapUrl", image, adid AS "adId", created_at';
 
+function normalizePhoneNumber(value: unknown): string {
+  const phone = String(value ?? '').replace(/\D/g, '').slice(-10);
+  if (!phone) {
+    return '';
+  }
+
+  if (!/^\d{10}$/.test(phone)) {
+    throw Object.assign(new Error('Phone number must be exactly 10 digits.'), {
+      status: 400,
+      code: 'INVALID_PHONE',
+    });
+  }
+
+  return phone;
+}
+
 // Public Routes
 app.get('/api/businesses', async (req, res) => {
   const db = await getDb();
@@ -857,6 +873,57 @@ app.put('/api/banners/:slot', auth, upload.single('imageFile'), async (req, res)
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to update banner', code: 'ERROR' });
+  }
+});
+
+// GET /api/popup-ad - Fetch the homepage popup ad (public)
+app.get('/api/popup-ad', async (req, res) => {
+  try {
+    const db = await getDb();
+    const result = await db.query(
+      'SELECT image_url, image_phone, button_phone, updated_at FROM popup_ad WHERE id = 1'
+    );
+
+    res.json({
+      data: result.rows[0] || {
+        image_url: '',
+        image_phone: '',
+        button_phone: '',
+        updated_at: null,
+      },
+    });
+  } catch (err: any) {
+    respondWithError(res, err, 'Failed to fetch popup ad');
+  }
+});
+
+// PUT /api/popup-ad - Update popup ad image and phone links (protected)
+app.put('/api/popup-ad', auth, upload.single('imageFile'), async (req, res) => {
+  try {
+    const db = await getDb();
+    const image_phone = normalizePhoneNumber(req.body.image_phone);
+    const button_phone = normalizePhoneNumber(req.body.button_phone);
+    let image_url = String(req.body.image_url ?? '').trim();
+
+    if (req.file) {
+      image_url = await uploadToSupabase(req.file);
+    }
+
+    const result = await db.query(
+      `INSERT INTO popup_ad (id, image_url, image_phone, button_phone, updated_at)
+       VALUES (1, $1, $2, $3, NOW())
+       ON CONFLICT (id)
+       DO UPDATE SET image_url = EXCLUDED.image_url,
+                     image_phone = EXCLUDED.image_phone,
+                     button_phone = EXCLUDED.button_phone,
+                     updated_at = NOW()
+       RETURNING image_url, image_phone, button_phone, updated_at`,
+      [image_url, image_phone, button_phone]
+    );
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err: any) {
+    respondWithError(res, err, 'Failed to update popup ad');
   }
 });
 

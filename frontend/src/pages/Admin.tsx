@@ -15,6 +15,7 @@ import AdminLayout from '../components/AdminLayout';
 import CategoryManagement from '../components/CategoryManagement';
 import AdvertisementManagement from '../components/AdvertisementManagement';
 import BannerManagement from '../components/BannerManagement';
+import PopupAdManagement from '../components/PopupAdManagement';
 import { isTokenExpired } from '../components/ProtectedRoute';
 import { CITIES, API_URL } from '../constants';
 import { useCategories } from '../hooks/useCategories';
@@ -53,10 +54,33 @@ const EMPTY_FORM: BusinessForm = {
 
 const AD_ID_REGEX = /^AD(\d+)$/i;
 const TEN_DIGIT_PHONE_REGEX = /^\d{10}$/;
-const ADDRESS_MAX_LENGTH = 120;
+const ADDRESS_MAX_LINES = 3;
+const ADDRESS_MAX_CHARS_PER_LINE = 40;
+const ADDRESS_MAX_LENGTH = ADDRESS_MAX_LINES * ADDRESS_MAX_CHARS_PER_LINE;
 
 function getTenDigitValue(value: string): string {
   return value.replace(/\D/g, '').slice(0, 10);
+}
+
+function getCardAddressValue(value: string): string {
+  const normalizedValue = value.replace(/\r\n/g, '\n');
+  const lines = normalizedValue
+    .split('\n')
+    .slice(0, ADDRESS_MAX_LINES)
+    .map((line) => line.slice(0, ADDRESS_MAX_CHARS_PER_LINE));
+
+  return lines.join('\n');
+}
+
+function getAddressLines(value: string): string[] {
+  const lines = getCardAddressValue(value).split('\n');
+  return Array.from({ length: ADDRESS_MAX_LINES }, (_, index) => lines[index] ?? '');
+}
+
+function updateAddressLine(value: string, lineIndex: number, nextLine: string): string {
+  const lines = getAddressLines(value);
+  lines[lineIndex] = nextLine.slice(0, ADDRESS_MAX_CHARS_PER_LINE);
+  return lines.join('\n').replace(/\n+$/, '');
 }
 
 function getAdIdNumber(adId: string | null | undefined): number {
@@ -187,7 +211,7 @@ export default function Admin() {
     if (!form.city.trim()) nextErrors.city = 'District is required';
     if (!form.address.trim()) nextErrors.address = 'Address is required';
     else if (form.address.trim().length > ADDRESS_MAX_LENGTH) {
-      nextErrors.address = `Address must be ${ADDRESS_MAX_LENGTH} characters or less`;
+      nextErrors.address = `Address must fit within ${ADDRESS_MAX_LINES} lines`;
     }
     if (!form.phone.trim()) nextErrors.phone = 'Phone number is required';
     else if (!TEN_DIGIT_PHONE_REGEX.test(form.phone)) nextErrors.phone = 'Phone number must be exactly 10 digits';
@@ -325,6 +349,7 @@ export default function Admin() {
       : `This business does not have an Ad ID yet. Leave it blank to assign ${nextAutoAdId} automatically.`
     : `Leave this blank to auto-generate `;
 
+  const addressLines = getAddressLines(form.address);
   const businessSidebarContent = null;
 
   if (!token) {
@@ -552,18 +577,33 @@ export default function Admin() {
                   >
                     Address *
                   </label>
-                  <textarea
-                    id="biz-address"
-                    placeholder="Full business address"
-                    value={form.address}
-                    onChange={(event) => setForm({ ...form, address: event.target.value })}
-                    rows={2}
-                    maxLength={ADDRESS_MAX_LENGTH}
-                    className={`${inputClass('address')} resize-none`}
-                  />
+                  <div className="space-y-1.5">
+                    {addressLines.map((line, index) => (
+                      <input
+                        key={index}
+                        id={index === 0 ? 'biz-address' : undefined}
+                        value={line}
+                        onChange={(event) =>
+                          setForm({
+                            ...form,
+                            address: updateAddressLine(form.address, index, event.target.value),
+                          })
+                        }
+                        maxLength={ADDRESS_MAX_CHARS_PER_LINE}
+                        placeholder={
+                          index === 0
+                            ? 'Line 1: Shop / street'
+                            : index === 1
+                              ? 'Line 2: Area / landmark'
+                              : 'Line 3: Town / pincode'
+                        }
+                        className={inputClass('address')}
+                      />
+                    ))}
+                  </div>
                   <div className="mt-1 flex items-center justify-between gap-2 text-[11px]">
                     <span className="text-[var(--color-text-muted)]">
-                      Keep it short so the full address fits on the card.
+                      Each line prints separately on the business card.
                     </span>
                     <span
                       className={
@@ -572,7 +612,7 @@ export default function Admin() {
                           : 'text-[var(--color-text-muted)]'
                       }
                     >
-                      {form.address.length}/{ADDRESS_MAX_LENGTH}
+                      {addressLines.filter((line) => line.trim()).length}/{ADDRESS_MAX_LINES} lines
                     </span>
                   </div>
                   {errors.address && (
@@ -818,6 +858,8 @@ export default function Admin() {
       {activeSection === 'advertisements' && token && <AdvertisementManagement />}
 
       {activeSection === 'banners' && token && <BannerManagement />}
+
+      {activeSection === 'popup-ad' && token && <PopupAdManagement token={token} />}
 
       <ConfirmModal
         open={!!deleteTarget}

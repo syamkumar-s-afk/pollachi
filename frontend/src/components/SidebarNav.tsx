@@ -11,6 +11,7 @@ import {
   LayoutPanelLeft,
   List,
   LogOut,
+  Megaphone,
   Plus,
   X,
 } from 'lucide-react';
@@ -183,6 +184,7 @@ export default function SidebarNav({
           {renderNavButton('categories', 'Category Management', <FolderOpen className="h-5 w-5" />)}
           {renderNavButton('advertisements', 'Advertisements', <ImageIcon className="h-5 w-5" />)}
           {renderNavButton('banners', 'Banners', <LayoutPanelLeft className="h-5 w-5" />)}
+          {renderNavButton('popup-ad', 'Popup Ad', <Megaphone className="h-5 w-5" />)}
         </nav>
 
         {!isCollapsed && sidebarContent && (

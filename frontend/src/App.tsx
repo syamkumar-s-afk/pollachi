@@ -6,6 +6,7 @@ import SkipToContent from './components/SkipToContent';
 import ScrollToTop from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
+import PopupAdModal from './components/PopupAdModal';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Listings from './pages/Listings';
@@ -41,6 +42,7 @@ function App() {
           <Footer />
           <MobileAddBusinessBanner />
         </div>
+        <PopupAdModal />
       </ToastProvider>
     </ErrorBoundary>
   );

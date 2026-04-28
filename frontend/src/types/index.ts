@@ -22,7 +22,15 @@ export type AdminSection =
   | 'all-businesses'
   | 'categories'
   | 'advertisements'
-  | 'banners';
+  | 'banners'
+  | 'popup-ad';
+
+export interface PopupAd {
+  image_url: string | null;
+  image_phone: string | null;
+  button_phone: string | null;
+  updated_at?: string | null;
+}
 
 export interface PaginatedResponse {
   data: Business[];

@@ -174,7 +174,7 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
                 {/* Address */}
                 <div className="flex items-start gap-2 text-sm text-[var(--color-text-secondary)]">
                   <MapPin className="w-4 h-4 flex-shrink-0 text-[var(--color-text-muted)] mt-0.5" />
-                  <span className="line-clamp-2 leading-relaxed font-medium break-words">
+                  <span className="break-words font-medium leading-snug">
                     {biz.address}
                   </span>
                 </div>
@@ -252,7 +252,7 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
               {/* Address */}
               <div className="flex items-start gap-2 text-sm text-[var(--color-text-secondary)]">
                 <MapPin className="w-4 h-4 flex-shrink-0 text-[var(--color-text-muted)] mt-0.5" />
-                <span className="line-clamp-2 leading-relaxed font-medium break-words">
+                <span className="break-words font-medium leading-snug">
                   {biz.address}
                 </span>
               </div>

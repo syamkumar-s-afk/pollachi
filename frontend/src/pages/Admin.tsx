@@ -53,6 +53,7 @@ const EMPTY_FORM: BusinessForm = {
 
 const AD_ID_REGEX = /^AD(\d+)$/i;
 const TEN_DIGIT_PHONE_REGEX = /^\d{10}$/;
+const ADDRESS_MAX_LENGTH = 120;
 
 function getTenDigitValue(value: string): string {
   return value.replace(/\D/g, '').slice(0, 10);
@@ -185,6 +186,9 @@ export default function Admin() {
     if (!form.sub_category.trim()) nextErrors.sub_category = 'Sub-category is required';
     if (!form.city.trim()) nextErrors.city = 'District is required';
     if (!form.address.trim()) nextErrors.address = 'Address is required';
+    else if (form.address.trim().length > ADDRESS_MAX_LENGTH) {
+      nextErrors.address = `Address must be ${ADDRESS_MAX_LENGTH} characters or less`;
+    }
     if (!form.phone.trim()) nextErrors.phone = 'Phone number is required';
     else if (!TEN_DIGIT_PHONE_REGEX.test(form.phone)) nextErrors.phone = 'Phone number must be exactly 10 digits';
     if (!form.whatsapp.trim()) nextErrors.whatsapp = 'WhatsApp number is required';
@@ -553,9 +557,24 @@ export default function Admin() {
                     placeholder="Full business address"
                     value={form.address}
                     onChange={(event) => setForm({ ...form, address: event.target.value })}
-                    rows={3}
+                    rows={2}
+                    maxLength={ADDRESS_MAX_LENGTH}
                     className={`${inputClass('address')} resize-none`}
                   />
+                  <div className="mt-1 flex items-center justify-between gap-2 text-[11px]">
+                    <span className="text-[var(--color-text-muted)]">
+                      Keep it short so the full address fits on the card.
+                    </span>
+                    <span
+                      className={
+                        form.address.length > ADDRESS_MAX_LENGTH
+                          ? 'font-semibold text-red-500'
+                          : 'text-[var(--color-text-muted)]'
+                      }
+                    >
+                      {form.address.length}/{ADDRESS_MAX_LENGTH}
+                    </span>
+                  </div>
                   {errors.address && (
                     <p className="mt-1 text-xs text-red-500">{errors.address}</p>
                   )}

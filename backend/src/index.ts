@@ -30,11 +30,20 @@ function getAllowedOrigins(): string[] {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  if (configuredOrigins.length > 0) {
-    return configuredOrigins;
-  }
+  return Array.from(new Set([
+    ...configuredOrigins,
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+  ]));
+}
 
-  return ['http://localhost:5173', 'http://127.0.0.1:5173'];
+function isAllowedLocalDevOrigin(origin: string): boolean {
+  try {
+    const { hostname } = new URL(origin);
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+  } catch {
+    return false;
+  }
 }
 
 const supabase = createClient(
@@ -52,7 +61,7 @@ app.use(helmet({
 }));
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || isAllowedLocalDevOrigin(origin)) {
       callback(null, true);
       return;
     }

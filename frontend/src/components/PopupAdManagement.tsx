@@ -226,7 +226,7 @@ export default function PopupAdManagement({ token }: PopupAdManagementProps) {
           <div className="rounded-lg border border-[var(--color-border)] bg-gray-50 p-3">
             <p className="mb-2 text-xs font-semibold text-[var(--color-text-muted)]">Preview</p>
             <div className="overflow-hidden rounded-lg bg-white shadow-sm">
-              <div className="relative aspect-[9/13] bg-gray-100">
+              <div className="relative aspect-[9/16] bg-gray-100">
                 {imageUrl ? (
                   <img src={imageUrl} alt="Popup ad preview" className="h-full w-full object-cover" />
                 ) : (

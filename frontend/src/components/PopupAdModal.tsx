@@ -77,25 +77,21 @@ export default function PopupAdModal() {
   }
 
   const image = (
-    <div className="relative flex max-h-[76vh] w-full items-center justify-center overflow-hidden bg-gray-100">
-      <img
-        src={imageUrl}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full scale-110 object-cover blur-xl"
-      />
-      <div className="absolute inset-0 bg-white/35" />
+    <div className="relative aspect-[9/16] w-full overflow-hidden bg-gray-100">
       <img
         src={imageUrl}
         alt="Advertisement"
-        className="relative block max-h-[76vh] w-full object-contain"
+        className="block h-full w-full object-cover"
       />
     </div>
   );
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-3 py-5 backdrop-blur-sm">
-      <div className="relative w-[80vw] max-w-[390px] overflow-visible">
+      <div
+        className="relative overflow-visible"
+        style={{ width: 'min(80vw, calc((100vh - 128px) * 9 / 16), 390px)' }}
+      >
         <button
           type="button"
           onClick={handleClose}

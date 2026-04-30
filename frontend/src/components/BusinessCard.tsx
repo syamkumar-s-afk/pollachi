@@ -71,7 +71,7 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
         </a>
 
         <a
-          href={`https://wa.me/${biz.whatsapp.replace(/\D/g, '')}`}
+          href={`https://wa.me/${(() => { const n = biz.whatsapp.replace(/\D/g, ''); return n.length === 10 ? '91' + n : n; })()}`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex h-[38px] min-w-0 flex-[1.15] items-center justify-start gap-1 rounded-md bg-green-500 px-2 text-[10px] font-extrabold text-white shadow-sm transition-colors hover:bg-green-600 sm:h-[44px] sm:flex-none sm:justify-center sm:gap-1.5 sm:px-3 sm:text-sm"

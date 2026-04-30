@@ -13,6 +13,26 @@ import { shareBusinessCard } from '../utils/shareUtils';
 import { getSafeHttpUrl } from '../utils/urlUtils';
 import ImagePreviewModal from './ImagePreviewModal';
 
+function getDialDigits(value: string): string | null {
+  const digits = String(value || '').replace(/\D/g, '');
+
+  if (digits.length >= 10) {
+    return digits.slice(-10);
+  }
+
+  return null;
+}
+
+function getPhoneHref(value: string): string | undefined {
+  const phoneDigits = getDialDigits(value);
+  return phoneDigits ? `tel:${phoneDigits}` : undefined;
+}
+
+function getWhatsAppHref(value: string): string | undefined {
+  const phoneDigits = getDialDigits(value);
+  return phoneDigits ? `https://wa.me/91${phoneDigits}` : undefined;
+}
+
 interface BusinessCardProps {
   business: Business;
   index: number;
@@ -47,6 +67,8 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
 
   const imageUrl = getImageUrl(biz.image);
   const mapUrl = getSafeHttpUrl(biz.mapUrl);
+  const phoneHref = getPhoneHref(biz.phone);
+  const whatsappHref = getWhatsAppHref(biz.whatsapp);
 
   const handleShare = async () => {
     const success = await shareBusinessCard(biz);
@@ -62,7 +84,7 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
     <div className="px-4 pb-4">
       <div className="flex flex-nowrap items-center gap-1.5 border-t border-gray-200 pt-3 justify-start sm:gap-2 sm:justify-end">
         <a
-          href={`tel:${biz.phone}`}
+          href={phoneHref}
           className="inline-flex h-[38px] min-w-0 flex-[0.95] items-center justify-start gap-1 rounded-md bg-red-500 px-2 text-[10px] font-extrabold text-white shadow-sm transition-colors hover:bg-red-600 sm:h-[44px] sm:flex-none sm:justify-center sm:gap-1.5 sm:px-3 sm:text-sm"
           aria-label={`Call ${biz.name}`}
         >
@@ -71,7 +93,7 @@ const BusinessCard = forwardRef<HTMLDivElement | HTMLElement, BusinessCardProps>
         </a>
 
         <a
-          href={`https://wa.me/${(() => { const n = biz.whatsapp.replace(/\D/g, ''); return n.length === 10 ? '91' + n : n; })()}`}
+          href={whatsappHref}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex h-[38px] min-w-0 flex-[1.15] items-center justify-start gap-1 rounded-md bg-green-500 px-2 text-[10px] font-extrabold text-white shadow-sm transition-colors hover:bg-green-600 sm:h-[44px] sm:flex-none sm:justify-center sm:gap-1.5 sm:px-3 sm:text-sm"

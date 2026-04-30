@@ -305,6 +305,8 @@ app.post('/api/businesses', auth, upload.single('imageFile'), async (req, res) =
   try {
     const db = await getDb();
     const { name, category, sub_category, city, address, phone, whatsapp, adId } = req.body;
+    const normalizedPhone = normalizePhoneNumber(phone);
+    const normalizedWhatsapp = normalizePhoneNumber(whatsapp);
     const mapUrl = normalizeOptionalUrl(req.body.mapUrl ?? req.body.map_url);
     let image = req.body.image || '';
 
@@ -323,7 +325,7 @@ app.post('/api/businesses', auth, upload.single('imageFile'), async (req, res) =
         `INSERT INTO businesses (name, category, sub_category, city, address, phone, whatsapp, map_url, image, adId)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          RETURNING id, adid AS "adId"`,
-        [name, category, sub_category, city, address, phone, whatsapp, mapUrl, image, finalAdId]
+        [name, category, sub_category, city, address, normalizedPhone, normalizedWhatsapp, mapUrl, image, finalAdId]
       );
     });
 
@@ -343,6 +345,8 @@ app.put('/api/businesses/:id', auth, upload.single('imageFile'), async (req, res
     }
 
     const { name, category, sub_category, city, address, phone, whatsapp, adId } = req.body;
+    const normalizedPhone = normalizePhoneNumber(phone);
+    const normalizedWhatsapp = normalizePhoneNumber(whatsapp);
     let image = req.body.image;
 
     if (req.file) {
@@ -391,7 +395,7 @@ app.put('/api/businesses/:id', auth, upload.single('imageFile'), async (req, res
              image = $9,
              adId = $10
          WHERE id = $11`,
-        [name, category, sub_category, city, address, phone, whatsapp, finalMapUrl, finalImage, finalAdId, businessId]
+        [name, category, sub_category, city, address, normalizedPhone, normalizedWhatsapp, finalMapUrl, finalImage, finalAdId, businessId]
       );
 
       return { adId: finalAdId };

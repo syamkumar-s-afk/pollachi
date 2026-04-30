@@ -652,6 +652,9 @@ export default function Admin() {
                     id="biz-phone"
                     type="tel"
                     inputMode="numeric"
+                    dir="ltr"
+                    lang="en"
+                    autoComplete="tel-national"
                     pattern="\d{10}"
                     maxLength={10}
                     placeholder="10 digit phone number"
@@ -673,6 +676,9 @@ export default function Admin() {
                     id="biz-whatsapp"
                     type="tel"
                     inputMode="numeric"
+                    dir="ltr"
+                    lang="en"
+                    autoComplete="tel-national"
                     pattern="\d{10}"
                     maxLength={10}
                     placeholder="10 digit WhatsApp number"

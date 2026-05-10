@@ -560,7 +560,7 @@ export default function Admin() {
                     onChange={(event) => setForm({ ...form, city: event.target.value })}
                     className={`${inputClass('city')} cursor-pointer`}
                   >
-                    <option value="">Select District</option>
+                    <option value="">Select City</option>
                     {CITIES.map((city) => (
                       <option key={city} value={city}>
                         {city}

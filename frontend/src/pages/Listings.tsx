@@ -18,13 +18,14 @@ import BusinessFilters from '../components/BusinessFilters';
 import type { Business } from '../types';
 import { getSharedBusinessId, clearSharedBusinessParam, fetchBusinessById } from '../utils/shareUtils';
 import { getSafeHttpUrl } from '../utils/urlUtils';
+import { normalizeCityName } from '../utils/cityUtils';
 
 export default function Listings() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
 
   // Filter states initialized from URL
-  const [city, setCity] = useState(searchParams.get('city') || '');
+  const [city, setCity] = useState(normalizeCityName(searchParams.get('city')));
   const [category, setCategory] = useState(
     searchParams.get('category') || ''
   );
@@ -62,7 +63,7 @@ export default function Listings() {
   // Keep state in sync if URL changes and handle shared business
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    setCity(params.get('city') || '');
+    setCity(normalizeCityName(params.get('city')));
     setCategory(params.get('category') || '');
     setSubCategory(params.get('sub_category') || '');
 

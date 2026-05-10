@@ -223,6 +223,31 @@ const respondWithError = (
 const BUSINESS_SELECT_FIELDS =
   'id, name, category, sub_category, city, address, phone, whatsapp, map_url AS "mapUrl", image, adid AS "adId", created_at';
 
+const CITY_ALIASES = [
+  ['கொடுமுடி', 'Kodumudi'],
+  ['சாலைப்புதூர்', 'Salaipudur', 'Saalai Pudur', 'Solaipudur'],
+  ['ஒத்தக்கடை', 'Othakadai', 'Otthakadai'],
+  ['சிவகிரி', 'Sivagiri'],
+  ['தாமரைபாளையம்', 'Thamaraipalayam', 'Thamarai Palayam'],
+  ['ஊஞ்சலூர்', 'Oonjalur', 'Unjalur', 'Oonjallur'],
+];
+
+function getCityFilterValues(value: unknown): string[] {
+  const city = String(value ?? '').trim();
+  if (!city) {
+    return [];
+  }
+
+  const normalizedCity = city.toLocaleLowerCase('en-IN');
+  const aliasGroup = CITY_ALIASES.find((aliases) =>
+    aliases.some((alias) => alias.toLocaleLowerCase('en-IN') === normalizedCity)
+  );
+
+  return Array.from(new Set([city, ...(aliasGroup ?? [])])).map((alias) =>
+    alias.toLocaleLowerCase('en-IN')
+  );
+}
+
 function normalizePhoneNumber(value: unknown): string {
   const phone = String(value ?? '').replace(/\D/g, '').slice(-10);
   if (!phone) {
@@ -253,7 +278,13 @@ app.get('/api/businesses', async (req, res) => {
   const params: any[] = [];
   let paramIndex = 1;
 
-  if (city) { whereClause += ` AND LOWER(city) = LOWER($${paramIndex++})`; params.push(city); }
+  if (city) {
+    const cityValues = getCityFilterValues(city);
+    if (cityValues.length > 0) {
+      whereClause += ` AND LOWER(city) = ANY($${paramIndex++}::text[])`;
+      params.push(cityValues);
+    }
+  }
   if (category) { whereClause += ` AND LOWER(category) = LOWER($${paramIndex++})`; params.push(category); }
   if (sub_category) { whereClause += ` AND LOWER(sub_category) = LOWER($${paramIndex++})`; params.push(sub_category); }
 

@@ -25,6 +25,7 @@ import {
   loginAdmin,
   saveBusiness,
 } from '../services/api';
+import { normalizeCityName } from '../utils/cityUtils';
 
 interface BusinessForm {
   id: number | null;
@@ -259,7 +260,7 @@ export default function Admin() {
       name: business.name,
       category: business.category,
       sub_category: business.sub_category,
-      city: business.city,
+      city: normalizeCityName(business.city),
       address: business.address,
       phone: getTenDigitValue(business.phone),
       whatsapp: getTenDigitValue(business.whatsapp),

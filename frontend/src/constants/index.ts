@@ -13,8 +13,6 @@ export const CITIES = [
   'சிவகிரி',
   'தாமரைபாளையம்',
   'ஊஞ்சலூர்'
-
-
 ] as const;
 
 export const ITEMS_PER_PAGE = 11;
